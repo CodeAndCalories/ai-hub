@@ -42,13 +42,12 @@ const Memstore = (() => {
   // ── Public API ────────────────────────────────────────────────────────────────
 
   async function testConnection() {
-    const data = await _req('GET', '/v1/memory/list');
-    return {
-      connected:    true,
-      plan:         data.plan         || 'free',
-      opsRemaining: data.opsRemaining ?? data.ops_remaining ?? data.operations_remaining ?? 0,
-      storageUsed:  data.storageUsed  || data.storage_used  || '0 B'
-    };
+    try {
+      await _req('GET', '/v1/memory/recall?q=test&top_k=1');
+      return { connected: true, plan: 'connected' };
+    } catch (_) {
+      return { connected: false };
+    }
   }
 
   async function remember(content) {
@@ -57,7 +56,7 @@ const Memstore = (() => {
 
   async function recall(query) {
     const data = await _req('GET', `/v1/memory/recall?q=${encodeURIComponent(query)}`);
-    return Array.isArray(data) ? data : (data.memories || data.results || []);
+    return data.memories || [];
   }
 
   async function forget(id) {
