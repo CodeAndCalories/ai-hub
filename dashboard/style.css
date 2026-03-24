@@ -359,6 +359,37 @@ code { font-family: monospace; font-size: 11px; color: #666; background: var(--b
 .tpl-del:hover { color: #e55; }
 .tpl-empty { font-size: 12px; color: #2a2a2a; padding: 4px 0; }
 
+/* ── MEMSTORE ────────────────────────────────────────────────── */
+.memstore-section {
+  border-top: 1px solid var(--border); padding: 10px 16px 14px; flex-shrink: 0;
+}
+.memstore-divider {
+  display: flex; align-items: center; margin-bottom: 10px;
+  font-size: 11px; color: var(--text3);
+}
+.memstore-divider::before,
+.memstore-divider::after  { content: ''; flex: 1; height: 1px; background: var(--border); }
+.memstore-divider::before { margin-right: 8px; }
+.memstore-divider::after  { margin-left:  8px; }
+.memstore-divider span    { white-space: nowrap; }
+.memstore-status { font-size: 12px; margin-bottom: 8px; line-height: 1.5; }
+.memstore-status.disconnected { color: #e55; }
+.memstore-status.connected    { color: #4a9; }
+.memstore-plan { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.memstore-key-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 7px 11px; color: #bbb;
+  font-size: 12px; font-family: monospace; outline: none;
+  transition: border-color 0.12s; margin-bottom: 8px; display: block;
+}
+.memstore-key-input:focus       { border-color: var(--border2); color: var(--text); }
+.memstore-key-input::placeholder { color: #2a2a2a; }
+.memstore-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.memstore-link {
+  font-size: 11px; color: #7c6aff; text-decoration: none; transition: opacity 0.12s;
+}
+.memstore-link:hover { opacity: 0.75; text-decoration: underline; }
+
 /* ── TOAST ────────────────────────────────────────────────────── */
 .toast {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);

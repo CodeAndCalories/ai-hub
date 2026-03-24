@@ -131,6 +131,29 @@
       <span class="mem-hint">Injected at the start of every API conversation</span>
       <span class="mem-autosave" id="memAutosave"></span>
     </div>
+
+    <!-- ── Memstore ──────────────────────────────────────────────── -->
+    <div class="memstore-section" id="memstoreSection">
+      <div class="memstore-divider"><span>Memstore</span></div>
+
+      <div id="memstoreDisconnected">
+        <div class="memstore-status disconnected">🔴 Not connected</div>
+        <input type="password" id="memstoreKeyInput" class="memstore-key-input" placeholder="am_live_..." autocomplete="off"/>
+        <div class="memstore-row">
+          <button class="db-btn" id="memstoreConnectBtn">Connect</button>
+          <a href="https://memstore.dev" target="_blank" class="memstore-link">Get a free key → memstore.dev</a>
+        </div>
+      </div>
+
+      <div id="memstoreConnected" style="display:none;">
+        <div class="memstore-status connected">🟢 Connected · <span id="memstoreOps"></span> ops remaining · <span id="memstoreStorage"></span> used</div>
+        <div class="memstore-plan">Plan: <span id="memstorePlan"></span></div>
+        <div class="memstore-row">
+          <button class="db-btn" id="memstoreRecallBtn">Recall recent memories</button>
+          <button class="db-btn" id="memstoreDisconnectBtn">Disconnect</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- SCRATCHPAD DRAWER -->
@@ -148,6 +171,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<script src="memstore.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

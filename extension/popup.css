@@ -444,3 +444,34 @@ code { font-family: monospace; font-size: 10px; color: #666; background: var(--b
   background: #0a180a; border: 1px solid #1a3a1a; color: #6ac;
   border-left: 2px solid #4a9;
 }
+
+/* ── MEMSTORE ────────────────────────────────────────────────── */
+.memstore-section {
+  border-top: 1px solid var(--border); padding: 8px 12px 12px; flex-shrink: 0;
+}
+.memstore-divider {
+  display: flex; align-items: center; margin-bottom: 8px;
+  font-size: 10px; color: var(--text3);
+}
+.memstore-divider::before,
+.memstore-divider::after  { content: ''; flex: 1; height: 1px; background: var(--border); }
+.memstore-divider::before { margin-right: 7px; }
+.memstore-divider::after  { margin-left:  7px; }
+.memstore-divider span    { white-space: nowrap; }
+.memstore-status { font-size: 11px; margin-bottom: 7px; line-height: 1.5; }
+.memstore-status.disconnected { color: #e55; }
+.memstore-status.connected    { color: #4a9; }
+.memstore-plan { font-size: 10px; color: var(--text3); margin-bottom: 7px; }
+.memstore-key-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 5px; padding: 5px 9px; color: #bbb;
+  font-size: 11px; font-family: monospace; outline: none;
+  transition: border-color 0.12s; margin-bottom: 7px; display: block;
+}
+.memstore-key-input:focus        { border-color: var(--border2); color: var(--text); }
+.memstore-key-input::placeholder { color: #2a2a2a; }
+.memstore-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.memstore-link {
+  font-size: 10px; color: #7c6aff; text-decoration: none; transition: opacity 0.12s;
+}
+.memstore-link:hover { opacity: 0.75; text-decoration: underline; }

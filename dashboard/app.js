@@ -218,6 +218,11 @@ function launch() {
   store.set({ modes: { ...S.modes }, memLabel: S.memoryLabel, ollamaOn: S.ollamaOn, ollamaModel: S.ollamaModel });
   loadMemory(); loadTemplates();
 
+  // Memstore auto-recall — silently appends top-3 results before first chat
+  Memstore.recallOnLaunch().then(recalled => {
+    if (recalled) S.memory = (S.memory ? S.memory + '\n\n' : '') + recalled;
+  }).catch(() => {});
+
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('mainScreen').style.display = 'flex';
   S.activeTab = sendableKeys()[0] || visibleKeys()[0] || null;
@@ -389,6 +394,9 @@ async function send(key, textOverride, isRelay) {
     const shown = S.view === 4 ? visibleKeys() : buildShownList(S.view);
     if (!shown.includes(key)) { S.unread[key]++; buildTabBar(S.view, visibleKeys()); }
     if (S.histories[key].length % 20 === 0) autoSummarizeOne(key);
+    // Memstore auto-save — fire-and-forget
+    const aiName = key.startsWith('ollama') ? `Ollama` : (AIS[key]?.name || key);
+    Memstore.rememberResponse(aiName, text, reply);
   } catch (err) {
     removeEl(tid);
     addBubble(key, 'assistant', '⚠ ' + err.message);
@@ -629,6 +637,71 @@ function bindDrawers() {
   document.getElementById('padBtn').addEventListener('click', () => toggle(padD, memD));
   document.getElementById('clearPadBtn').addEventListener('click', () => { document.getElementById('padText').value = ''; showToast('Cleared'); });
   document.getElementById('closePadBtn').addEventListener('click', () => { padD.style.display = 'none'; });
+  bindMemstore();
+}
+
+// ── Memstore UI ───────────────────────────────────────────────────────────────
+
+function renderMemstoreUI() {
+  const connected = !!Memstore.getKey();
+  document.getElementById('memstoreDisconnected').style.display = connected ? 'none' : 'block';
+  document.getElementById('memstoreConnected').style.display    = connected ? 'block' : 'none';
+}
+
+function bindMemstore() {
+  renderMemstoreUI();
+
+  document.getElementById('memstoreConnectBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('memstoreConnectBtn');
+    const raw = document.getElementById('memstoreKeyInput').value.trim();
+    if (!raw) { showToast('Paste your Memstore key first'); return; }
+    btn.disabled = true; btn.textContent = 'Connecting...';
+    Memstore.saveKey(raw);
+    try {
+      const info = await Memstore.testConnection();
+      document.getElementById('memstoreKeyInput').value = '';
+      document.getElementById('memstoreOps').textContent     = info.opsRemaining;
+      document.getElementById('memstoreStorage').textContent = info.storageUsed;
+      document.getElementById('memstorePlan').textContent    = info.plan;
+      renderMemstoreUI();
+      showToast('Memstore connected ✓');
+    } catch (err) {
+      Memstore.clearKey();
+      renderMemstoreUI();
+      showToast('Connection failed — check your key');
+      console.debug('[Memstore] connect error:', err.message);
+    }
+    btn.disabled = false; btn.textContent = 'Connect';
+  });
+
+  document.getElementById('memstoreDisconnectBtn').addEventListener('click', () => {
+    Memstore.clearKey();
+    renderMemstoreUI();
+    showToast('Memstore disconnected');
+  });
+
+  document.getElementById('memstoreRecallBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('memstoreRecallBtn');
+    btn.disabled = true; btn.textContent = 'Recalling...';
+    try {
+      const query = S.memoryLabel || 'recent context and preferences';
+      const results = await Memstore.recall(query);
+      if (!results.length) { showToast('No memories found'); }
+      else {
+        const text = results.slice(0, 3).map(m => m.content || m.text || '').filter(Boolean).join('\n');
+        if (text) {
+          const mt = document.getElementById('memText');
+          mt.value = mt.value ? mt.value + '\n\n--- Recalled from Memstore ---\n' + text : '--- Recalled from Memstore ---\n' + text;
+          S.memory = mt.value;
+          showToast(`Recalled ${Math.min(results.length, 3)} memories ✓`);
+        }
+      }
+    } catch (err) {
+      showToast('Recall failed');
+      console.debug('[Memstore] recall error:', err.message);
+    }
+    btn.disabled = false; btn.textContent = 'Recall recent memories';
+  });
 }
 
 // ── Debate Engine ─────────────────────────────────────────────────────────────
