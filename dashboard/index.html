@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Hub</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen">
+  <div class="setup-wrap">
+    <div class="setup-header">
+      <span class="logo">AI Hub</span>
+      <span class="logo-v">dashboard · v5</span>
+    </div>
+    <p class="setup-desc">Set each AI to <strong>API</strong> (chat here, needs key), <strong>Native</strong> (opens your real logged-in tab), or <strong>Off</strong>. Ollama is free &amp; local — no key needed.</p>
+
+    <div id="setupRows"></div>
+
+    <!-- Ollama -->
+    <div class="ollama-setup" id="ollamaSetup">
+      <div class="setup-row-top">
+        <div class="sdot" style="background:#e8704a"></div>
+        <span class="sname">Ollama <span class="ollama-free">free · local</span></span>
+        <div class="mode-switch">
+          <button class="ms-btn active" data-olmode="on">On</button>
+          <button class="ms-btn" data-olmode="off">Off</button>
+        </div>
+      </div>
+      <div id="ollamaKeyRow">
+        <p class="ollama-info">Runs AI models locally on your machine. Needs <a href="https://ollama.com/download" target="_blank">Ollama</a> installed. No API key — completely free &amp; private.</p>
+        <div class="ollama-model-row">
+          <label class="slabel">model</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="sinput" id="ollamaModel" placeholder="e.g. llama3, mistral, phi3..." style="flex:1;"/>
+            <button class="detect-btn" id="detectModels">detect models</button>
+          </div>
+          <div class="model-chips" id="modelChips" style="display:none;"></div>
+          <p class="shint">Or type any model name you've pulled with <code>ollama pull modelname</code></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-mem">
+      <label class="slabel">memory label <span class="opt">optional</span></label>
+      <input type="text" id="memLabel" class="sinput" placeholder="e.g. work, personal, coding..."/>
+      <p class="shint">Saves your memory context by name in this browser across sessions.</p>
+    </div>
+    <button class="go-btn" id="goBtn">Launch AI Hub</button>
+  </div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="mainScreen" style="display:none;">
+
+  <div class="topbar">
+    <span class="logo">AI Hub</span>
+    <div class="view-btns">
+      <button class="vb" data-v="1">1</button>
+      <button class="vb" data-v="2">2</button>
+      <button class="vb" data-v="3">3</button>
+      <button class="vb active" data-v="4">4</button>
+    </div>
+    <div class="broadcast-inline">
+      <input type="text" id="broadcastInput" placeholder="Broadcast to all active panels..."/>
+      <button id="broadcastBtn">↗ all</button>
+    </div>
+    <div class="topbar-right">
+      <button class="tb-btn relay-btn" id="relayBtn">relay off</button>
+      <button class="tb-btn debate-btn" id="debateBtn">⚔ debate</button>
+      <button class="tb-btn" id="memBtn">memory</button>
+      <button class="tb-btn" id="padBtn">pad</button>
+      <button class="tb-btn settings" id="settingsBtn">⚙ settings</button>
+    </div>
+  </div>
+
+  <!-- debate control bar -->
+  <div class="debate-bar" id="debateBar" style="display:none;">
+    <div class="debate-bar-left">
+      <span class="debate-label">⚔ debate mode</span>
+      <div class="rounds-select">
+        <button class="round-btn active" data-rounds="1">1 round</button>
+        <button class="round-btn" data-rounds="2">2 rounds</button>
+        <button class="round-btn" data-rounds="3">3 rounds</button>
+      </div>
+    </div>
+    <input type="text" id="debateInput" placeholder="Topic or question to debate..."/>
+    <button id="debateStartBtn">start ⚔</button>
+    <div class="debate-status" id="debateStatus"></div>
+  </div>
+
+  <!-- summary bar -->
+  <div class="summary-bar" id="summaryBar" style="display:none;">
+    <span class="summary-label">debate complete</span>
+    <button class="db-btn" id="summaryBtn">✦ summarize debate</button>
+    <button class="db-btn" id="summaryCloseBtn">✕</button>
+  </div>
+
+  <!-- tab bar -->
+  <div class="tab-bar" id="tabBar" style="display:none;"></div>
+
+  <!-- panels -->
+  <div class="panels" id="panels"></div>
+
+  <!-- MEMORY DRAWER -->
+  <div class="drawer" id="memDrawer" style="display:none;">
+    <div class="drawer-top">
+      <span>memory <span class="drawer-sub" id="memLabelDisplay"></span></span>
+      <div class="drawer-acts">
+        <button class="db-btn" id="saveMemBtn">save</button>
+        <button class="db-btn" id="autoSumBtn">auto-summarize</button>
+        <button class="db-btn" id="tplBtn">templates</button>
+        <button class="db-btn" id="closeMemBtn">✕</button>
+      </div>
+    </div>
+    <div class="tpl-panel" id="tplPanel" style="display:none;">
+      <div class="tpl-header">
+        <span class="tpl-title">templates</span>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="tplNameInput" class="tpl-name-input" placeholder="template name..."/>
+          <button class="db-btn" id="saveTplBtn">save current</button>
+          <button class="db-btn" id="closeTplBtn">✕</button>
+        </div>
+      </div>
+      <div class="tpl-list" id="tplList"></div>
+    </div>
+    <textarea id="memText" placeholder="What you want every AI to know:&#10;- My name is...&#10;- Current project: ...&#10;- I prefer concise answers&#10;- My stack: ..."></textarea>
+    <div class="mem-footer">
+      <span class="mem-hint">Injected at the start of every API conversation</span>
+      <span class="mem-autosave" id="memAutosave"></span>
+    </div>
+  </div>
+
+  <!-- SCRATCHPAD DRAWER -->
+  <div class="drawer" id="padDrawer" style="display:none;">
+    <div class="drawer-top">
+      <span>scratchpad</span>
+      <div class="drawer-acts">
+        <button class="db-btn" id="clearPadBtn">clear</button>
+        <button class="db-btn" id="closePadBtn">✕</button>
+      </div>
+    </div>
+    <textarea id="padText" placeholder="Paste responses here to compare...&#10;Use '→ pad' on any reply to send it here."></textarea>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
