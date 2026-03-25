@@ -145,6 +145,19 @@ const sendableKeys = () => ALL_KEYS.filter(k => {
 });
 const visibleKeys = () => ALL_KEYS.filter(k => S.modes[k] !== 'off');
 
+// Brainstorm state (mirrors debate's D object)
+const BS = { running: false, rounds: 1, topic: '', lastReplies: {} };
+
+// Prompt library state + defaults pre-loaded on first run
+let S_prompts = [];
+const DEFAULT_PROMPTS = [
+  { name: 'Compare approaches', text: 'What are the tradeoffs between [X] and [Y]? Give a concrete recommendation.' },
+  { name: "Devil's advocate",   text: 'What are the strongest arguments AGAINST this idea: [idea]' },
+  { name: 'Simplify',           text: 'Explain [topic] as simply as possible. Use an analogy.' },
+  { name: 'Action plan',        text: 'Turn this into a concrete 5-step action plan: [goal]' },
+  { name: 'Find the flaw',      text: 'What could go wrong with this plan? What am I missing: [plan]' },
+];
+
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
 function buildSetup(prefill) {
@@ -481,7 +494,15 @@ async function broadcastAndRelay(text) {
   // Demo mode — fire demo responses for each panel and stop
   if (DEMO_MODE) { targets.forEach(k => sendDemoMessage(k, text)); return; }
 
+  // Hide any stale conflict banner from a previous broadcast
+  document.getElementById('conflictBanner').style.display = 'none';
+
   await Promise.allSettled(targets.map(k => send(k, text)));
+
+  // Fire-and-forget conflict detection (≥2 real API panels, never blocks UI)
+  const apiTargets = targets.filter(k => S.modes[k] === 'api' && (k === 'ollama' ? S.ollamaOn : !!S.apiKeys[k]));
+  if (apiTargets.length >= 2) checkConflict(text, apiTargets);
+
   if (!S.relayOn) return;
   await new Promise(r => setTimeout(r, 400));
   const replies = {};
@@ -673,6 +694,7 @@ function bindDrawers() {
   };
   document.getElementById('memBtn').addEventListener('click', () => {
     toggle(memD, padD);
+    document.getElementById('promptsDrawer').style.display = 'none';
     document.getElementById('memText').value = S.memory;
     const lbl = document.getElementById('memLabelDisplay');
     if (lbl) lbl.textContent = S.memoryLabel ? `· ${S.memoryLabel}` : '';
@@ -681,7 +703,10 @@ function bindDrawers() {
   document.getElementById('autoSumBtn').addEventListener('click', autoSummarizeAll);
   document.getElementById('closeMemBtn').addEventListener('click', () => { memD.style.display = 'none'; });
   document.getElementById('memText').addEventListener('input', e => { S.memory = e.target.value; });
-  document.getElementById('padBtn').addEventListener('click', () => toggle(padD, memD));
+  document.getElementById('padBtn').addEventListener('click', () => {
+    toggle(padD, memD);
+    document.getElementById('promptsDrawer').style.display = 'none';
+  });
   document.getElementById('clearPadBtn').addEventListener('click', () => { document.getElementById('padText').value = ''; showToast('Cleared'); });
   document.getElementById('closePadBtn').addEventListener('click', () => { padD.style.display = 'none'; });
   bindMemstore();
@@ -942,6 +967,301 @@ function setDebateStatus(msg) {
   if (el) el.textContent = msg;
 }
 
+// ── Brainstorm Engine ─────────────────────────────────────────────────────────
+
+function bindBrainstorm() {
+  const bsBtn = document.getElementById('brainstormBtn');
+  const bsBar = document.getElementById('brainstormBar');
+  const dbBar = document.getElementById('debateBar');
+
+  bsBtn.addEventListener('click', () => {
+    const open = bsBar.style.display !== 'none';
+    // Close debate bar if open (mutual exclusivity)
+    dbBar.style.display = 'none';
+    document.getElementById('debateBtn').classList.remove('active');
+    bsBar.style.display = open ? 'none' : 'flex';
+    bsBtn.classList.toggle('active', !open);
+    document.getElementById('brainstormSummaryBar').style.display = 'none';
+  });
+
+  document.querySelectorAll('.bs-round-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      BS.rounds = parseInt(btn.dataset.bsrounds);
+      document.querySelectorAll('.bs-round-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  document.getElementById('brainstormStartBtn').addEventListener('click', startBrainstorm);
+  document.getElementById('brainstormInput').addEventListener('keydown', e => { if (e.key === 'Enter') startBrainstorm(); });
+  document.getElementById('brainstormSumBtn').addEventListener('click', summarizeBrainstorm);
+  document.getElementById('brainstormSumCloseBtn').addEventListener('click', () => {
+    document.getElementById('brainstormSummaryBar').style.display = 'none';
+  });
+}
+
+async function startBrainstorm() {
+  if (BS.running) return;
+  const topic = document.getElementById('brainstormInput').value.trim();
+  if (!topic) { showToast('Enter a brainstorm topic'); return; }
+  const targets = sendableKeys();
+  if (!targets.length) { showToast('No active API panels'); return; }
+
+  BS.running = true; BS.topic = topic; BS.lastReplies = {};
+  document.getElementById('brainstormInput').value = '';
+  document.getElementById('brainstormStartBtn').disabled = true;
+  document.getElementById('brainstormSummaryBar').style.display = 'none';
+
+  const roundLabels = ['round 1 — ideas', 'round 2 — build on others', 'round 3 — synthesize'];
+
+  const addRoundHeader = (round) => {
+    targets.forEach(key => {
+      const cm = document.getElementById('cm-' + key);
+      if (!cm) return;
+      document.getElementById('es-' + key)?.remove();
+      const hdr = document.createElement('div');
+      hdr.className = 'round-header';
+      hdr.textContent = roundLabels[round - 1] || `round ${round}`;
+      cm.appendChild(hdr); cm.scrollTop = cm.scrollHeight;
+    });
+  };
+
+  // Round 1 — independent ideas, no anchoring
+  setBrainstormStatus('Round 1…');
+  addRoundHeader(1);
+  await Promise.all(targets.map(async key => {
+    const prompt = `Generate 3-5 creative, distinct ideas for: ${topic}\nBe specific and practical. Avoid obvious answers.`;
+    S.histories[key].push({ role: 'user', content: prompt });
+    addDebateBubble(key, 'user', prompt, 1);
+    const reply = await callAI(key);
+    if (reply) {
+      S.histories[key].push({ role: 'assistant', content: reply });
+      addDebateBubble(key, 'assistant', reply, 1);
+      BS.lastReplies[key] = reply;
+    }
+  }));
+
+  // Round 2 — each AI sees the others' round-1 ideas and builds on them
+  if (BS.rounds >= 2) {
+    setBrainstormStatus('Round 2…');
+    addRoundHeader(2);
+    const round1 = { ...BS.lastReplies };
+    await Promise.all(targets.map(async key => {
+      const others = Object.entries(round1)
+        .filter(([k]) => k !== key)
+        .map(([k, r]) => `${labelFor(k)}: "${r}"`)
+        .join('\n\n');
+      const prompt = `Here are ideas from other AIs:\n\n${others}\n\nBuild on the strongest ideas. Combine concepts from different responses. Add what's missing.`;
+      S.histories[key].push({ role: 'user', content: prompt });
+      const reply = await callAI(key);
+      if (reply) {
+        S.histories[key].push({ role: 'assistant', content: reply });
+        addDebateBubble(key, 'assistant', reply, 2);
+        BS.lastReplies[key] = reply;
+      }
+    }));
+  }
+
+  // Round 3 — synthesize all round-2 thinking into a final recommendation
+  if (BS.rounds >= 3) {
+    setBrainstormStatus('Round 3…');
+    addRoundHeader(3);
+    const round2 = { ...BS.lastReplies };
+    await Promise.all(targets.map(async key => {
+      const allR2 = Object.entries(round2)
+        .map(([k, r]) => `${labelFor(k)}: "${r}"`)
+        .join('\n\n');
+      const prompt = `Here is the refined thinking so far:\n\n${allR2}\n\nSynthesize into a final recommended approach. Be concrete and actionable.`;
+      S.histories[key].push({ role: 'user', content: prompt });
+      const reply = await callAI(key);
+      if (reply) {
+        S.histories[key].push({ role: 'assistant', content: reply });
+        addDebateBubble(key, 'assistant', reply, 3);
+        BS.lastReplies[key] = reply;
+      }
+    }));
+  }
+
+  BS.running = false;
+  setBrainstormStatus('done');
+  document.getElementById('brainstormStartBtn').disabled = false;
+  document.getElementById('brainstormSummaryBar').style.display = 'flex';
+  showToast('Brainstorm complete — synthesize?');
+}
+
+async function summarizeBrainstorm() {
+  const targets = sendableKeys();
+  if (!targets.length) return;
+  document.getElementById('brainstormSumBtn').disabled = true;
+  setBrainstormStatus('synthesizing…');
+
+  const allResponses = targets.map(key => {
+    const msgs = (S.histories[key] || []).filter(m => m.role === 'assistant').map(m => m.content);
+    return `${labelFor(key)}:\n${msgs.join('\n')}`;
+  }).join('\n\n---\n\n');
+
+  const prompt = `Brainstorm topic: "${BS.topic}"\n\n${allResponses}\n\nSynthesize these ideas into a clear, prioritized action plan. Remove duplicates. Keep only the most actionable suggestions.`;
+  const sk = targets[0];
+
+  try {
+    S.histories[sk].push({ role: 'user', content: prompt });
+    const summary = await callAI(sk);
+    if (summary) {
+      S.histories[sk].push({ role: 'assistant', content: summary });
+      addSummaryBubble(sk, summary);
+    }
+  } catch (_) { showToast('Synthesis failed'); }
+
+  document.getElementById('brainstormSumBtn').disabled = false;
+  setBrainstormStatus('');
+}
+
+function setBrainstormStatus(msg) {
+  const el = document.getElementById('brainstormStatus');
+  if (el) el.textContent = msg;
+}
+
+// ── Conflict Detection ────────────────────────────────────────────────────────
+
+// Called after every broadcast with ≥2 real API panels.
+// Silent on failure — never blocks or throws to the caller.
+async function checkConflict(question, targets) {
+  const sk = sendableKeys()[0];
+  if (!sk) return;
+
+  const responses = targets
+    .map(k => {
+      const last = [...(S.histories[k] || [])].reverse().find(m => m.role === 'assistant');
+      return last ? `${labelFor(k)}: "${last.content.slice(0, 300)}"` : null;
+    })
+    .filter(Boolean)
+    .join('\n\n');
+
+  if (!responses) return;
+
+  const prompt = `Here are responses from different AI models to the question '${question}':\n\n${responses}\n\nIn one sentence: do these responses significantly disagree on any key facts or recommendations? Answer only: 'CONFLICT: [brief description]' or 'AGREE: responses are broadly consistent'`;
+
+  try {
+    const reply = sk === 'ollama'
+      ? await AIS.ollama.call(null, [{ role: 'user', content: prompt }], null, S.ollamaModel)
+      : await AIS[sk].call(S.apiKeys[sk], [{ role: 'user', content: prompt }], null);
+
+    if (reply && /^CONFLICT:/i.test(reply.trim())) {
+      const desc = reply.trim().replace(/^CONFLICT:\s*/i, '');
+      document.getElementById('conflictMsg').textContent = desc;
+      document.getElementById('conflictBanner').style.display = 'flex';
+    }
+  } catch (_) { /* silent — conflict detection is best-effort */ }
+}
+
+// ── Prompt Library ────────────────────────────────────────────────────────────
+
+function loadPrompts() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('aihub_prompts') || 'null');
+    S_prompts = saved || DEFAULT_PROMPTS.slice();
+    if (!saved) savePrompts(); // persist defaults on first run
+  } catch (_) { S_prompts = DEFAULT_PROMPTS.slice(); }
+}
+
+function savePrompts() {
+  try { localStorage.setItem('aihub_prompts', JSON.stringify(S_prompts)); } catch (_) {}
+}
+
+function renderPrompts() {
+  const list = document.getElementById('promptList');
+  list.innerHTML = '';
+  if (!S_prompts.length) {
+    list.innerHTML = '<p class="prompt-empty">No prompts saved. Type in the broadcast bar and save it above.</p>';
+    return;
+  }
+  S_prompts.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'prompt-item';
+    const textDiv = document.createElement('div');
+    textDiv.className = 'prompt-item-text';
+    textDiv.innerHTML = `<div class="prompt-item-name">${p.name}</div><div class="prompt-item-preview">${p.text.slice(0, 60)}${p.text.length > 60 ? '…' : ''}</div>`;
+    // Click the text area → fill broadcast input
+    textDiv.addEventListener('click', () => {
+      document.getElementById('broadcastInput').value = p.text;
+      showToast(`Loaded "${p.name}"`);
+    });
+    const del = document.createElement('button');
+    del.className = 'prompt-del'; del.textContent = '✕';
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      S_prompts.splice(i, 1);
+      savePrompts(); renderPrompts();
+    });
+    item.appendChild(textDiv); item.appendChild(del);
+    list.appendChild(item);
+  });
+}
+
+function bindPromptLibrary() {
+  const promptsD = document.getElementById('promptsDrawer');
+
+  document.getElementById('promptsBtn').addEventListener('click', () => {
+    const open = promptsD.style.display !== 'none';
+    document.getElementById('memDrawer').style.display = 'none';
+    document.getElementById('padDrawer').style.display = 'none';
+    promptsD.style.display = open ? 'none' : 'flex';
+    if (!open) { promptsD.style.flexDirection = 'column'; renderPrompts(); }
+  });
+
+  document.getElementById('closePromptsBtn').addEventListener('click', () => {
+    promptsD.style.display = 'none';
+  });
+
+  document.getElementById('savePromptBtn').addEventListener('click', () => {
+    const name = document.getElementById('promptNameInput').value.trim();
+    const text = document.getElementById('broadcastInput').value.trim();
+    if (!name) { showToast('Enter a prompt name'); return; }
+    if (!text) { showToast('Type something in the broadcast bar first'); return; }
+    S_prompts.push({ name, text });
+    savePrompts(); renderPrompts();
+    document.getElementById('promptNameInput').value = '';
+    showToast(`Prompt "${name}" saved`);
+  });
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+function exportSession() {
+  const now      = new Date();
+  const dateStr  = now.toISOString().slice(0, 10);  // YYYY-MM-DD for filename
+  const dateTime = now.toLocaleString();
+
+  let md = `# AI Hub Session Export\nDate: ${dateTime}\n\n`;
+
+  if (S.memory.trim()) {
+    md += `## Memory Context\n${S.memory.trim()}\n\n`;
+  }
+
+  md += `## Conversations\n\n`;
+
+  ALL_KEYS.forEach(key => {
+    const hist = S.histories[key];
+    if (!hist || !hist.length) return;
+    const name = key === 'ollama' ? `Ollama (${S.ollamaModel})` : AIS[key].name;
+    md += `### ${name}\n\n`;
+    hist.forEach(msg => {
+      if (msg.role === 'user') md += `**You:** ${msg.content}\n\n`;
+      else                     md += `**${name}:** ${msg.content}\n\n`;
+    });
+  });
+
+  md += `---\nExported from AI Hub · https://codeandcalories.github.io/ai-hub/dashboard/`;
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `aihub-export-${dateStr}.md`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('Session exported ✓');
+}
+
 // ── Demo Functions ────────────────────────────────────────────────────────────
 
 // Simulates a single AI response: shows user bubble, typing indicator,
@@ -1067,8 +1387,15 @@ function bindMain() {
   });
 
   bindDebate();
+  bindBrainstorm();
   bindDrawers();
   bindTemplates();
+  bindPromptLibrary();
+  loadPrompts();
+  document.getElementById('exportBtn').addEventListener('click', exportSession);
+  document.getElementById('conflictDismiss').addEventListener('click', () => {
+    document.getElementById('conflictBanner').style.display = 'none';
+  });
   document.getElementById('settingsBtn').addEventListener('click', goToSettings);
 }
 

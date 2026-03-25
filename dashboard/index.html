@@ -87,8 +87,11 @@
     <div class="topbar-right">
       <button class="tb-btn relay-btn" id="relayBtn">relay off</button>
       <button class="tb-btn debate-btn" id="debateBtn">⚔ debate</button>
+      <button class="tb-btn brainstorm-btn" id="brainstormBtn">🧠 brainstorm</button>
+      <button class="tb-btn" id="promptsBtn">prompts</button>
       <button class="tb-btn" id="memBtn">memory</button>
       <button class="tb-btn" id="padBtn">pad</button>
+      <button class="tb-btn" id="exportBtn">export</button>
       <button class="tb-btn settings" id="settingsBtn">⚙ settings</button>
     </div>
   </div>
@@ -113,6 +116,34 @@
     <span class="summary-label">debate complete</span>
     <button class="db-btn" id="summaryBtn">✦ summarize debate</button>
     <button class="db-btn" id="summaryCloseBtn">✕</button>
+  </div>
+
+  <!-- brainstorm control bar -->
+  <div class="brainstorm-bar" id="brainstormBar" style="display:none;">
+    <div class="brainstorm-bar-left">
+      <span class="brainstorm-label">🧠 brainstorm</span>
+      <div class="rounds-select">
+        <button class="bs-round-btn active" data-bsrounds="1">1 round</button>
+        <button class="bs-round-btn" data-bsrounds="2">2 rounds</button>
+        <button class="bs-round-btn" data-bsrounds="3">3 rounds</button>
+      </div>
+    </div>
+    <input type="text" id="brainstormInput" placeholder="Topic or question to brainstorm..."/>
+    <button id="brainstormStartBtn">start 🧠</button>
+    <div class="brainstorm-status" id="brainstormStatus"></div>
+  </div>
+
+  <!-- brainstorm summary bar -->
+  <div class="summary-bar" id="brainstormSummaryBar" style="display:none;">
+    <span class="summary-label">brainstorm complete</span>
+    <button class="db-btn" id="brainstormSumBtn">✦ synthesize ideas</button>
+    <button class="db-btn" id="brainstormSumCloseBtn">✕</button>
+  </div>
+
+  <!-- conflict banner — shown when broadcast models disagree -->
+  <div class="conflict-banner" id="conflictBanner" style="display:none;">
+    <span>⚠ Models disagree: <span id="conflictMsg"></span></span>
+    <button id="conflictDismiss">✕</button>
   </div>
 
   <!-- tab bar -->
@@ -183,6 +214,21 @@
       </div>
     </div>
     <textarea id="padText" placeholder="Paste responses here to compare...&#10;Use '→ pad' on any reply to send it here."></textarea>
+  </div>
+
+  <!-- PROMPTS DRAWER -->
+  <div class="drawer" id="promptsDrawer" style="display:none;">
+    <div class="drawer-top">
+      <span>prompt library</span>
+      <div class="drawer-acts">
+        <button class="db-btn" id="closePromptsBtn">✕</button>
+      </div>
+    </div>
+    <div class="prompt-save-row">
+      <input type="text" id="promptNameInput" class="tpl-name-input" placeholder="prompt name..."/>
+      <button class="db-btn" id="savePromptBtn">save broadcast as prompt</button>
+    </div>
+    <div class="prompt-list" id="promptList"></div>
   </div>
 
 </div>

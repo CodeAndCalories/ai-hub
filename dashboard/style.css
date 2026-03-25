@@ -501,3 +501,76 @@ code { font-family: monospace; font-size: 11px; color: #666; background: var(--b
   background: #0a180a; border: 1px solid #1a3a1a; color: #6ac;
   border-left: 2px solid #4a9;
 }
+
+/* ── BRAINSTORM ─────────────────────────────────────────────── */
+.tb-btn.brainstorm-btn { color: #2a6a3a; border-color: #1a2e1a; }
+.tb-btn.brainstorm-btn:hover { color: #4a9; border-color: #1a4028; background: #0a1810; }
+.tb-btn.brainstorm-btn.active { color: #4a9; border-color: #1a4028; background: #0a1810; }
+
+.brainstorm-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 16px; border-bottom: 1px solid #1a2e1a;
+  background: #0a1410; flex-shrink: 0;
+}
+.brainstorm-bar-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.brainstorm-label { font-size: 12px; color: #3a8a5a; font-weight: 500; white-space: nowrap; }
+
+.bs-round-btn {
+  font-size: 11px; padding: 3px 10px; border-radius: 4px;
+  border: 1px solid #1a3020; background: transparent; color: #2a5a3a;
+  cursor: pointer; transition: all 0.12s;
+}
+.bs-round-btn:hover { color: #4a9; border-color: #2a5a3a; }
+.bs-round-btn.active { background: #0a1a10; color: #6ba; border-color: #2a5a3a; }
+
+#brainstormInput {
+  flex: 1; background: #101a10; border: 1px solid #1a3020; border-radius: 6px;
+  padding: 7px 12px; color: #aaa; font-size: 13px; outline: none; min-width: 200px;
+}
+#brainstormInput:focus { border-color: #2a5a3a; color: #ddd; }
+#brainstormInput::placeholder { color: #1a2a1a; }
+#brainstormStartBtn {
+  font-size: 12px; padding: 7px 16px; border-radius: 6px;
+  border: 1px solid #2a5a3a; background: #0a1a10; color: #6ba;
+  cursor: pointer; white-space: nowrap; transition: all 0.12s;
+}
+#brainstormStartBtn:hover { background: #0f2a18; }
+#brainstormStartBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+.brainstorm-status { font-size: 11px; color: #2a6a3a; white-space: nowrap; }
+
+/* ── CONFLICT BANNER ─────────────────────────────────────────── */
+.conflict-banner {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 16px; background: #141200; border-bottom: 1px solid #2a2600;
+  color: #b8a020; font-size: 12px; flex-shrink: 0;
+}
+#conflictDismiss {
+  background: transparent; border: none; color: #555;
+  cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1;
+}
+#conflictDismiss:hover { color: #999; }
+
+/* ── PROMPT LIBRARY ──────────────────────────────────────────── */
+.prompt-save-row {
+  display: flex; gap: 8px; padding: 10px 16px;
+  border-bottom: 1px solid var(--border); background: var(--bg3); flex-shrink: 0;
+}
+.prompt-list { flex: 1; overflow-y: auto; }
+.prompt-empty { font-size: 12px; color: #2a2a2a; padding: 14px 16px; }
+.prompt-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.1s;
+}
+.prompt-item:hover { background: var(--bg3); }
+.prompt-item-text { flex: 1; min-width: 0; }
+.prompt-item-name { font-size: 12px; color: var(--text); font-weight: 500; }
+.prompt-item-preview {
+  font-size: 11px; color: var(--text3); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prompt-del {
+  font-size: 11px; color: var(--text3); background: none;
+  border: none; cursor: pointer; padding: 2px 6px; flex-shrink: 0;
+}
+.prompt-del:hover { color: #e55; }
