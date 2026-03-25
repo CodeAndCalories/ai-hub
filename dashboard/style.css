@@ -101,12 +101,50 @@ code { font-family: monospace; font-size: 11px; color: #666; background: var(--b
 .sinput::placeholder { color: #2a2a2a; }
 .shint { font-size: 11px; color: #2a2a2a; margin-top: 6px; line-height: 1.5; }
 
+/* ── SECURITY NOTE ───────────────────────────────────────────── */
+.security-note {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 10px 12px; background: #0e0e0e; border: 1px solid #1e1e1e;
+  border-radius: 6px; margin-bottom: 10px; font-size: 11px; color: #555; line-height: 1.6;
+}
+.security-icon { font-size: 12px; flex-shrink: 0; }
+.security-note a { color: #446; text-decoration: none; }
+.security-note a:hover { color: #668; text-decoration: underline; }
+
 .go-btn {
   width: 100%; padding: 13px; background: var(--text); color: var(--bg);
   border: none; border-radius: var(--radius); font-size: 15px; font-weight: 500;
   cursor: pointer; transition: opacity 0.15s;
 }
 .go-btn:hover { opacity: 0.88; }
+
+.demo-btn {
+  width: 100%; padding: 10px; background: transparent; border: 1px solid #333;
+  border-radius: var(--radius); color: #888; font-size: 13px;
+  margin-top: 8px; cursor: pointer; transition: all 0.15s;
+}
+.demo-btn:hover { border-color: #555; color: #ccc; }
+
+/* ── DEMO BANNER ─────────────────────────────────────────────── */
+.demo-banner {
+  display: flex; justify-content: space-between; align-items: center;
+  width: 100%; padding: 8px 16px; background: #1a1500;
+  border-bottom: 1px solid #3a3000; color: #aa9000; font-size: 12px; flex-shrink: 0;
+}
+#demoExitBtn {
+  background: transparent; border: none; color: #ccb000;
+  cursor: pointer; font-size: 12px;
+}
+#demoExitBtn:hover { text-decoration: underline; }
+
+/* ── GEMINI FREE BADGE ───────────────────────────────────────── */
+.free-badge-row { display: flex; gap: 10px; align-items: center; margin-top: 5px; }
+.free-badge {
+  font-size: 10px; color: #4a9; background: #0d1f18;
+  border: 1px solid #1a3028; border-radius: 3px; padding: 1px 6px;
+}
+.free-badge-link { font-size: 10px; color: #4285f4; text-decoration: none; }
+.free-badge-link:hover { text-decoration: underline; }
 
 /* ── MAIN LAYOUT ──────────────────────────────────────────────── */
 #mainScreen { display: flex; flex-direction: column; height: 100vh; }

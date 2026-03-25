@@ -1,5 +1,35 @@
 'use strict';
 
+// ── Demo Mode ─────────────────────────────────────────────────────────────────
+
+let DEMO_MODE = false;
+
+// Cycling counters so each panel rotates through its responses
+const DEMO_COUNTERS = { chatgpt: 0, claude: 0, gemini: 0, grok: 0 };
+
+const DEMO_RESPONSES = {
+  chatgpt: [
+    "AI Hub is a great example of multi-model orchestration. By routing the same prompt to multiple models simultaneously, you get diverse perspectives that a single model can't provide. The broadcast feature alone saves significant context-switching time.",
+    "The relay feature is particularly powerful for iterative thinking. When I see what Claude or Gemini said, I can build on their strongest points rather than repeating the same ground. It's closer to how a real team thinks.",
+    "From an architecture standpoint, keeping API calls client-side is the right call for a privacy-first tool. No server means no attack surface for key theft. The tradeoff is no server-side memory, which is exactly what Memstore solves.",
+  ],
+  claude: [
+    "What I find interesting about AI Hub's approach is the structured debate mode. Most multi-AI tools just show parallel responses, but giving each model the others' answers and asking for a reaction produces genuinely better synthesis. The disagreements are often more useful than the agreements.",
+    "The memory injection system is the hidden feature here. Most users underestimate how much a well-written memory context improves every response. It's essentially a persistent system prompt that evolves with your work.",
+    "I'd argue the scratchpad is underrated. Having a neutral space to collect the best fragments from four different models — without committing to any one thread — mirrors how good research actually works.",
+  ],
+  gemini: [
+    "Multi-model comparison is increasingly important as different models develop distinct strengths. GPT-4o tends to be more direct, Claude more nuanced, and I tend to pull in broader context. AI Hub makes those differences visible and useful rather than forcing you to pick one.",
+    "The Ollama integration is a smart addition. For sensitive or proprietary work, being able to route queries to a local model while still comparing with cloud models gives users real control over data exposure.",
+    "The debate round structure — independent answers first, then reactions — is actually how structured thinking works. You want unanchored initial responses before introducing social influence. AI Hub does this correctly.",
+  ],
+  grok: [
+    "Honestly? The tab switching chaos of managing four browser tabs is one of those daily friction points nobody talks about. AI Hub removes it cleanly. Small thing, huge quality of life improvement.",
+    "The relay mode is where it gets interesting. After a broadcast, automatically sharing all responses as context for the next message turns four parallel conversations into one collaborative thread. That's actually novel.",
+    "The free local model support via Ollama is the right move for privacy-conscious users. Running Mistral or Llama3 locally for sensitive queries while using cloud models for general work is a genuinely useful workflow.",
+  ]
+};
+
 // ── AI Definitions ────────────────────────────────────────────────────────────
 
 const AIS = {
@@ -140,6 +170,11 @@ function buildSetup(prefill) {
       <div class="key-row" id="kr-${key}" style="opacity:${mode!=='api'?'0.15':'1'}">
         <input class="key-input" id="ki-${key}" type="password" placeholder="${ai.placeholder}" ${mode!=='api'?'disabled':''} autocomplete="off"/>
       </div>
+      ${key === 'gemini' ? `
+      <div class="free-badge-row" id="fbr-gemini" style="opacity:${mode!=='api'?'0.15':'1'}">
+        <span class="free-badge">✓ Free tier available</span>
+        <a class="free-badge-link" href="https://aistudio.google.com/app/apikey" target="_blank">Get a free Gemini key in 30 seconds →</a>
+      </div>` : ''}
     `;
     container.appendChild(row);
   });
@@ -156,6 +191,9 @@ function buildSetup(prefill) {
     kr.style.opacity = mode === 'api' ? '1' : '0.15';
     ki.disabled = mode !== 'api';
     if (mode !== 'api') ki.value = '';
+    // Also toggle the Gemini free badge row opacity
+    const fbr = document.getElementById('fbr-gemini');
+    if (fbr && key === 'gemini') fbr.style.opacity = mode === 'api' ? '1' : '0.15';
   });
 
   // Ollama
@@ -204,6 +242,7 @@ function buildSetup(prefill) {
 
   if (prefill?.memoryLabel) document.getElementById('memLabel').value = prefill.memoryLabel;
   document.getElementById('goBtn').onclick = launch;
+  document.getElementById('demoBtn').onclick = launchDemo;
 }
 
 function launch() {
@@ -375,6 +414,10 @@ async function send(key, textOverride, isRelay) {
   const text = textOverride !== undefined ? textOverride : ta?.value?.trim();
   if (!text) return;
   if (ta && textOverride === undefined) { ta.value = ''; ta.style.height = 'auto'; }
+
+  // Demo mode — skip real API calls entirely
+  if (DEMO_MODE) { sendDemoMessage(key, text, isRelay); return; }
+
   const apiKey = key === 'ollama' ? null : S.apiKeys[key];
   if (key !== 'ollama' && !apiKey) { showToast(`No API key for ${AIS[key].name}`); return; }
 
@@ -434,6 +477,10 @@ function addRelayedBubble(toKey, fromKey, text) {
 async function broadcastAndRelay(text) {
   const targets = sendableKeys();
   if (!targets.length) { showToast('No active panels'); return; }
+
+  // Demo mode — fire demo responses for each panel and stop
+  if (DEMO_MODE) { targets.forEach(k => sendDemoMessage(k, text)); return; }
+
   await Promise.allSettled(targets.map(k => send(k, text)));
   if (!S.relayOn) return;
   await new Promise(r => setTimeout(r, 400));
@@ -747,6 +794,9 @@ async function startDebate() {
   const targets = sendableKeys();
   if (targets.length < 2) { showToast('Need at least 2 active API panels'); return; }
 
+  // Demo mode — simulate debate with canned responses and realistic delays
+  if (DEMO_MODE) { await runDemoDebate(topic); return; }
+
   D.running = true; D.topic = topic; D.lastReplies = {};
   document.getElementById('debateInput').value = '';
   document.getElementById('debateStartBtn').disabled = true;
@@ -890,6 +940,111 @@ function addSummaryBubble(key, text) {
 function setDebateStatus(msg) {
   const el = document.getElementById('debateStatus');
   if (el) el.textContent = msg;
+}
+
+// ── Demo Functions ────────────────────────────────────────────────────────────
+
+// Simulates a single AI response: shows user bubble, typing indicator,
+// waits a realistic delay, then shows the canned demo reply.
+async function sendDemoMessage(key, text, isRelay) {
+  if (!DEMO_RESPONSES[key] || S.loading[key]) return;
+  document.getElementById('es-' + key)?.remove();
+  if (!isRelay) {
+    S.histories[key].push({ role: 'user', content: text });
+    addBubble(key, 'user', text);
+  }
+  const tid = addTyping(key);
+  S.loading[key] = true; setSend(key, true);
+  // Realistic thinking delay: 800–2000ms
+  await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+  removeEl(tid);
+  const responses = DEMO_RESPONSES[key];
+  const reply = responses[DEMO_COUNTERS[key] % responses.length];
+  DEMO_COUNTERS[key]++;
+  S.histories[key].push({ role: 'assistant', content: reply });
+  addBubble(key, 'assistant', reply);
+  S.loading[key] = false; setSend(key, false);
+}
+
+// Activates demo mode: skips setup, loads all 4 panels with fake keys,
+// shows the demo banner, and drops straight into the 4-panel view.
+function launchDemo() {
+  DEMO_MODE = true;
+  // Give all 4 cloud AIs 'api' mode + a placeholder key so sendableKeys() returns them
+  CLOUD_KEYS.forEach(key => {
+    S.modes[key] = 'api';
+    S.apiKeys[key] = 'demo-placeholder';
+    S.histories[key] = []; S.loading[key] = false; S.unread[key] = 0;
+  });
+  S.modes.ollama = 'off';
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'flex';
+  const banner = document.getElementById('demoBanner');
+  banner.style.display = 'flex';
+  document.getElementById('demoExitBtn').addEventListener('click', () => location.reload());
+  S.activeTab = sendableKeys()[0];
+  buildPanels(); bindMain(); setView(4);
+}
+
+// Runs a simulated debate using DEMO_RESPONSES instead of real API calls.
+async function runDemoDebate(topic) {
+  const targets = CLOUD_KEYS.filter(k => DEMO_RESPONSES[k]);
+  D.running = true; D.topic = topic; D.lastReplies = {};
+  document.getElementById('debateInput').value = '';
+  document.getElementById('debateStartBtn').disabled = true;
+  document.getElementById('summaryBar').style.display = 'none';
+
+  const addRoundHeader = (round) => {
+    targets.forEach(key => {
+      const cm = document.getElementById('cm-' + key);
+      if (!cm) return;
+      document.getElementById('es-' + key)?.remove();
+      const hdr = document.createElement('div');
+      hdr.className = 'round-header';
+      hdr.textContent = round === 1 ? 'round 1 — initial response' : `round ${round} — reactions`;
+      cm.appendChild(hdr); cm.scrollTop = cm.scrollHeight;
+    });
+  };
+
+  setDebateStatus('Round 1…');
+  addRoundHeader(1);
+
+  // Round 1 — each panel gets an independent demo response
+  await Promise.all(targets.map(async key => {
+    S.histories[key].push({ role: 'user', content: topic });
+    addDebateBubble(key, 'user', topic, 1);
+    const tid = addTyping(key);
+    await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+    removeEl(tid);
+    const reply = DEMO_RESPONSES[key][DEMO_COUNTERS[key] % DEMO_RESPONSES[key].length];
+    DEMO_COUNTERS[key]++;
+    S.histories[key].push({ role: 'assistant', content: reply });
+    addDebateBubble(key, 'assistant', reply, 1);
+    D.lastReplies[key] = reply;
+  }));
+
+  // Round 2+ — reactions with staggered delays between rounds
+  for (let round = 2; round <= D.rounds; round++) {
+    setDebateStatus(`Round ${round}…`);
+    addRoundHeader(round);
+    await new Promise(r => setTimeout(r, 400));
+    await Promise.all(targets.map(async key => {
+      const tid = addTyping(key);
+      await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+      removeEl(tid);
+      const reply = DEMO_RESPONSES[key][DEMO_COUNTERS[key] % DEMO_RESPONSES[key].length];
+      DEMO_COUNTERS[key]++;
+      S.histories[key].push({ role: 'assistant', content: reply });
+      addDebateBubble(key, 'assistant', reply, round);
+      D.lastReplies[key] = reply;
+    }));
+  }
+
+  D.running = false;
+  setDebateStatus('done');
+  document.getElementById('debateStartBtn').disabled = false;
+  document.getElementById('summaryBar').style.display = 'flex';
+  showToast('Debate complete — summarize?');
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────

@@ -48,12 +48,25 @@
       <input type="text" id="memLabel" class="sinput" placeholder="e.g. work, personal, coding..."/>
       <p class="shint">Saves your memory context by name in this browser across sessions.</p>
     </div>
+    <div class="security-note">
+      <span class="security-icon">🔒</span>
+      <span>Your API keys never leave your browser. AI Hub has no server —
+        <a href="https://github.com/CodeAndCalories/ai-hub" target="_blank">view the source on GitHub</a>.
+      </span>
+    </div>
     <button class="go-btn" id="goBtn">Launch AI Hub</button>
+    <button class="demo-btn" id="demoBtn">Try demo — no API keys needed</button>
   </div>
 </div>
 
 <!-- MAIN SCREEN -->
 <div id="mainScreen" style="display:none;">
+
+  <!-- Demo banner — hidden until demo mode is activated -->
+  <div class="demo-banner" id="demoBanner" style="display:none;">
+    <span>⚡ Demo mode — responses are simulated</span>
+    <button id="demoExitBtn">Add real API keys →</button>
+  </div>
 
   <div class="topbar">
     <span class="logo">AI Hub</span>
