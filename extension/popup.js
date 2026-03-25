@@ -66,6 +66,14 @@ async function ollamaCall(msgs, memory, model) {
 
 const CLOUD_KEYS = ['chatgpt', 'claude', 'gemini', 'grok'];
 
+const PERSONA_PRESETS = [
+  { label: 'Concise',    text: 'Be extremely concise. Answer in 1-3 sentences maximum. No preamble.' },
+  { label: 'Socratic',   text: 'Respond with probing questions that challenge my assumptions rather than direct answers.' },
+  { label: 'Expert',     text: 'You are a domain expert. Use precise technical language and cite tradeoffs.' },
+  { label: 'ELI5',       text: 'Explain everything as if I am five years old. Use simple analogies and short sentences.' },
+  { label: 'Devil\'s Advocate', text: 'Always argue the opposite of whatever I say. Be constructively contrarian.' },
+];
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 const S = {
@@ -83,7 +91,9 @@ const S = {
   templates:    {},
   view:         4,
   activeTab:    null,
-  relayOn:      false
+  relayOn:      false,
+  personas:    {},
+  zoomed:      null
 };
 
 // Dynamic key helpers
@@ -96,6 +106,16 @@ function sendableKeys() {
   });
 }
 function visibleKeys() { return allKeys().filter(k => S.modes[k] && S.modes[k] !== 'off'); }
+
+// Pending images per panel: key → [{base64, mimeType}]
+const pendingImages = {};
+// Pinned messages per panel: key → [{text}]
+const pinnedMessages = {};
+
+function getSystemPrompt(key) {
+  const parts = [S.memory, S.personas[key]].filter(Boolean);
+  return parts.join('\n\n---\n\n') || '';
+}
 
 // ── Resize ────────────────────────────────────────────────────────────────────
 
@@ -351,6 +371,18 @@ function buildPanels() {
       const openBtn = makeBtn('open ↗', () => openNative(key));
       actions.appendChild(openBtn);
     } else {
+      const personaBtn = makeBtn('🎭', () => togglePersona(key));
+      personaBtn.id = 'pb-' + key;
+      personaBtn.title = 'Set persona / system prompt';
+      personaBtn.className = 'pa-btn persona-btn';
+      actions.appendChild(personaBtn);
+
+      const zoomBtn = makeBtn('⤢', () => toggleZoom(key));
+      zoomBtn.id = 'zb-' + key;
+      zoomBtn.title = 'Zoom panel';
+      zoomBtn.className = 'pa-btn zoom-btn';
+      actions.appendChild(zoomBtn);
+
       actions.appendChild(makeBtn('clear',     () => clearChat(key)));
       actions.appendChild(makeBtn('copy last', () => copyLast(key)));
     }
@@ -358,6 +390,54 @@ function buildPanels() {
     // Wire native body open button
     const nativeOpenBtn = panel.querySelector('.native-open');
     if (nativeOpenBtn) nativeOpenBtn.addEventListener('click', () => openNative(key));
+
+    // Persona popover
+    if (mode !== 'native') {
+      const ph = panel.querySelector('.ph');
+      if (ph) ph.id = 'ph-' + key;
+
+      // Insert persona popover after .ph
+      const popover = document.createElement('div');
+      popover.className = 'persona-popover';
+      popover.id = 'pp-' + key;
+      popover.style.display = 'none';
+      const presetsDiv = document.createElement('div');
+      presetsDiv.className = 'persona-presets';
+      presetsDiv.id = 'pps-' + key;
+      PERSONA_PRESETS.forEach(preset => {
+        const btn = document.createElement('button');
+        btn.className = 'preset-chip'; btn.textContent = preset.label;
+        btn.addEventListener('click', () => { document.getElementById('pt-' + key).value = preset.text; });
+        presetsDiv.appendChild(btn);
+      });
+      const textarea = document.createElement('textarea');
+      textarea.className = 'persona-textarea'; textarea.id = 'pt-' + key;
+      textarea.placeholder = 'System prompt for this panel only... (combined with global memory)';
+      const footer = document.createElement('div');
+      footer.className = 'persona-footer';
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'pf-btn'; saveBtn.textContent = 'apply';
+      saveBtn.addEventListener('click', () => {
+        const text = textarea.value.trim();
+        S.personas[key] = text || '';
+        updatePersonaIndicator(key);
+        popover.style.display = 'none';
+        showToast(text ? 'Persona applied ✓' : 'Persona cleared');
+      });
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'pf-btn'; clearBtn.textContent = 'clear persona';
+      clearBtn.addEventListener('click', () => {
+        S.personas[key] = ''; textarea.value = '';
+        updatePersonaIndicator(key); showToast('Persona cleared');
+      });
+      footer.appendChild(saveBtn); footer.appendChild(clearBtn);
+      popover.appendChild(presetsDiv); popover.appendChild(textarea); popover.appendChild(footer);
+      // Insert between .ph and the body
+      panel.insertBefore(popover, panel.children[1]);
+
+      // Double-click header to zoom
+      if (ph) ph.addEventListener('dblclick', () => toggleZoom(key));
+    }
 
     if (mode !== 'native') bindChat(key);
   });
@@ -368,6 +448,54 @@ function makeBtn(label, fn) {
   b.className = 'pa-btn'; b.textContent = label;
   b.addEventListener('click', fn);
   return b;
+}
+
+function togglePersona(key) {
+  const pp = document.getElementById('pp-' + key);
+  if (!pp) return;
+  const open = pp.style.display !== 'none';
+  pp.style.display = open ? 'none' : 'block';
+  if (!open) {
+    const pt = document.getElementById('pt-' + key);
+    if (pt && S.personas[key]) pt.value = S.personas[key];
+  }
+}
+
+function updatePersonaIndicator(key) {
+  const btn = document.getElementById('pb-' + key);
+  if (btn) btn.classList.toggle('persona-active', !!S.personas[key]);
+}
+
+function toggleZoom(key) {
+  S.zoomed = (S.zoomed === key) ? null : key;
+  applyZoom();
+}
+
+function applyZoom() {
+  const allVisible = visibleKeys();
+  if (!S.zoomed || !allVisible.includes(S.zoomed)) {
+    S.zoomed = null;
+    allVisible.forEach(k => {
+      const p = document.getElementById('p-' + k);
+      if (p) p.classList.remove('zoomed');
+      const zb = document.getElementById('zb-' + k);
+      if (zb) zb.textContent = '⤢';
+    });
+    setView(S.view);
+    return;
+  }
+  document.getElementById('panels').className = 'panels v4';
+  allVisible.forEach(k => {
+    const p = document.getElementById('p-' + k);
+    if (!p) return;
+    if (k === S.zoomed) {
+      p.classList.add('zoomed'); p.classList.remove('hidden');
+      const zb = document.getElementById('zb-' + k); if (zb) zb.textContent = '⤡';
+    } else {
+      p.classList.remove('zoomed'); p.classList.add('hidden');
+      const zb = document.getElementById('zb-' + k); if (zb) zb.textContent = '⤢';
+    }
+  });
 }
 
 function nativeBody(key, ai) {
@@ -393,7 +521,12 @@ function apiBody(key, name, hasKey, isOllama) {
         <span class="ek">${hasKey ? (S.memory ? 'memory loaded' : 'no memory set') : 'go to ⚙ settings'}</span>
       </div>
     </div>
+    <div class="image-preview-strip" id="ips-${key}" style="display:none;"></div>
     <div class="chat-input-row">
+      <label class="img-upload-btn" title="Attach image">
+        🖼
+        <input type="file" accept="image/*" class="img-file-input" id="ifi-${key}" style="display:none;" multiple/>
+      </label>
       <textarea class="chat-textarea" id="ct-${key}" placeholder="Message... (Enter to send)" rows="1"></textarea>
       <button class="send-btn" id="sb-${key}">send</button>
     </div>`;
@@ -406,6 +539,31 @@ function bindChat(key) {
   sb.addEventListener('click', () => send(key));
   ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(key); } });
   ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 75) + 'px'; });
+
+  // Image file input
+  const fileInput = document.getElementById('ifi-' + key);
+  if (fileInput) fileInput.addEventListener('change', e => handleImageFiles(key, Array.from(e.target.files)));
+
+  // Paste images
+  ta.addEventListener('paste', e => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItems = items.filter(i => i.type.startsWith('image/'));
+    if (!imageItems.length) return;
+    e.preventDefault();
+    handleImageFiles(key, imageItems.map(i => i.getAsFile()).filter(Boolean));
+  });
+
+  // Drag-drop images
+  const panel = document.getElementById('p-' + key);
+  if (panel) {
+    panel.addEventListener('dragover', e => { e.preventDefault(); panel.classList.add('drag-over'); });
+    panel.addEventListener('dragleave', () => panel.classList.remove('drag-over'));
+    panel.addEventListener('drop', e => {
+      e.preventDefault(); panel.classList.remove('drag-over');
+      const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+      if (files.length) handleImageFiles(key, files);
+    });
+  }
 }
 
 // ── View & Tabs ───────────────────────────────────────────────────────────────
@@ -463,6 +621,45 @@ function buildTabBar(v, vk) {
   });
 }
 
+// ── Image handling ────────────────────────────────────────────────────────────
+
+function handleImageFiles(key, files) {
+  if (!files.length) return;
+  if (!pendingImages[key]) pendingImages[key] = [];
+  const strip = document.getElementById('ips-' + key);
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!match) return;
+      const [, mimeType, base64] = match;
+      const idx = pendingImages[key].length;
+      pendingImages[key].push({ base64, mimeType });
+
+      if (strip) {
+        strip.style.display = 'flex';
+        const thumb = document.createElement('div');
+        thumb.className = 'img-thumb';
+        thumb.dataset.idx = idx;
+        thumb.innerHTML = `<img src="${dataUrl}" alt=""/><button class="img-thumb-rm" data-key="${key}" data-idx="${idx}">✕</button>`;
+        thumb.querySelector('.img-thumb-rm').addEventListener('click', () => {
+          pendingImages[key].splice(parseInt(thumb.dataset.idx), 1);
+          thumb.remove();
+          if (!pendingImages[key].length) strip.style.display = 'none';
+          Array.from(strip.children).forEach((t, i) => { t.dataset.idx = i; const r = t.querySelector('.img-thumb-rm'); if(r) r.dataset.idx = i; });
+        });
+        strip.appendChild(thumb);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const fi = document.getElementById('ifi-' + key);
+  if (fi) fi.value = '';
+}
+
 // ── Send ──────────────────────────────────────────────────────────────────────
 
 async function send(key, textOverride, isRelay) {
@@ -479,16 +676,31 @@ async function send(key, textOverride, isRelay) {
 
   if (!isOllama && !S.apiKeys[key]) { showToast(`No API key for ${AIS[key]?.name}`); return; }
 
+  // Grab pending images and clear the strip
+  const imgs = (pendingImages[key] || []).slice();
+  pendingImages[key] = [];
+  const strip = document.getElementById('ips-' + key);
+  if (strip) { strip.style.display = 'none'; strip.innerHTML = ''; }
+
   document.getElementById('es-' + key)?.remove();
-  if (!isRelay) { S.histories[key].push({ role: 'user', content: text }); addBubble(key, 'user', text); }
+  if (!isRelay) {
+    S.histories[key].push({ role: 'user', content: text });
+    addBubble(key, 'user', text, imgs);
+  }
 
   const tid = addTyping(key);
   S.loading[key] = true; setSend(key, true);
 
   try {
-    const reply = isOllama
-      ? await ollamaCall(S.histories[key], S.memory, S.ollamaModels[key])
-      : await AIS[key].call(S.apiKeys[key], S.histories[key], S.memory);
+    const sys = getSystemPrompt(key);
+    let reply;
+    if (imgs.length && !isOllama) {
+      reply = await callAIVision(key, S.histories[key], sys, text, imgs);
+    } else {
+      reply = isOllama
+        ? await ollamaCall(S.histories[key], sys, S.ollamaModels[key])
+        : await AIS[key].call(S.apiKeys[key], S.histories[key], sys);
+    }
     removeEl(tid);
     S.histories[key].push({ role: 'assistant', content: reply });
     addBubble(key, 'assistant', reply);
@@ -557,13 +769,29 @@ async function broadcastAndRelay(text) {
 
 // ── Bubble helpers ────────────────────────────────────────────────────────────
 
-function addBubble(key, role, text) {
+function addBubble(key, role, text, images) {
   const cm = document.getElementById('cm-' + key);
   if (!cm) return;
   const wrap = document.createElement('div');
   wrap.className = 'msg ' + role;
   const bubble = document.createElement('div');
-  bubble.className = 'bubble'; bubble.textContent = text;
+  bubble.className = 'bubble';
+
+  if (role === 'user' && images && images.length) {
+    const imgRow = document.createElement('div');
+    imgRow.className = 'bubble-imgs';
+    images.forEach(img => {
+      const im = document.createElement('img');
+      im.src = `data:${img.mimeType};base64,${img.base64}`;
+      im.className = 'bubble-img-thumb';
+      imgRow.appendChild(im);
+    });
+    bubble.appendChild(imgRow);
+    if (text) { const t = document.createElement('div'); t.textContent = text; bubble.appendChild(t); }
+  } else {
+    bubble.textContent = text;
+  }
+
   wrap.appendChild(bubble);
   if (role === 'assistant') {
     const acts = document.createElement('div');
@@ -582,10 +810,50 @@ function addBubble(key, role, text) {
     s.className = 'ma-btn share-all'; s.textContent = '→ all';
     s.title = 'Share this response to all other panels as context';
     s.addEventListener('click', () => shareToAll(key, text));
-    acts.appendChild(c); acts.appendChild(p); acts.appendChild(s);
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'ma-btn pin-btn'; pinBtn.textContent = '📌 pin';
+    pinBtn.addEventListener('click', () => pinMessage(key, text, pinBtn));
+    acts.appendChild(c); acts.appendChild(p); acts.appendChild(s); acts.appendChild(pinBtn);
     wrap.appendChild(acts);
   }
   cm.appendChild(wrap); cm.scrollTop = cm.scrollHeight;
+}
+
+function pinMessage(key, text, btn) {
+  if (!pinnedMessages[key]) pinnedMessages[key] = [];
+  if (pinnedMessages[key].some(p => p.text === text)) { showToast('Already pinned'); return; }
+  pinnedMessages[key].push({ text });
+  if (btn) { btn.textContent = '📌 pinned'; btn.disabled = true; }
+  renderPinnedSection(key);
+  showToast('Pinned ✓');
+}
+
+function renderPinnedSection(key) {
+  const cm = document.getElementById('cm-' + key);
+  if (!cm) return;
+  let pinSection = document.getElementById('pinned-' + key);
+  const pins = pinnedMessages[key] || [];
+  if (!pins.length) { if (pinSection) pinSection.remove(); return; }
+  if (!pinSection) {
+    pinSection = document.createElement('div');
+    pinSection.id = 'pinned-' + key;
+    pinSection.className = 'pinned-section';
+    cm.insertBefore(pinSection, cm.firstChild);
+  }
+  pinSection.innerHTML = `<div class="pinned-header"><span>📌 pinned (${pins.length})</span><button class="pinned-toggle" id="pt-tog-${key}">▾</button></div><div class="pinned-list" id="pl-${key}"></div>`;
+  const list = pinSection.querySelector('#pl-' + key);
+  pins.forEach((pin, i) => {
+    const item = document.createElement('div');
+    item.className = 'pinned-item';
+    item.innerHTML = `<span class="pinned-text">${pin.text.slice(0, 100)}${pin.text.length > 100 ? '…' : ''}</span><button class="pinned-rm">✕</button>`;
+    item.querySelector('.pinned-rm').addEventListener('click', () => { pinnedMessages[key].splice(i, 1); renderPinnedSection(key); });
+    list.appendChild(item);
+  });
+  pinSection.querySelector('#pt-tog-' + key).addEventListener('click', () => {
+    const l = pinSection.querySelector('#pl-' + key);
+    l.style.display = l.style.display === 'none' ? 'block' : 'none';
+    pinSection.querySelector('#pt-tog-' + key).textContent = l.style.display === 'none' ? '▸' : '▾';
+  });
 }
 
 function addTyping(key) {
@@ -621,10 +889,14 @@ function openNative(key) {
 
 function clearChat(key) {
   S.histories[key] = [];
+  pinnedMessages[key] = [];
+  pendingImages[key] = [];
   const cm = document.getElementById('cm-' + key);
   if (!cm) return;
   const name = S.ollamaKeys.includes(key) ? `Ollama·${S.ollamaModels[key]}` : AIS[key]?.name;
   cm.innerHTML = `<div class="empty-state" id="es-${key}"><span class="en">${name}</span><span class="eh">cleared</span></div>`;
+  const strip = document.getElementById('ips-' + key);
+  if (strip) { strip.style.display = 'none'; strip.innerHTML = ''; }
   showToast('Chat cleared');
 }
 
@@ -1027,14 +1299,55 @@ function setDebateStatus(msg) {
 // helper: call the right AI without mutating history
 async function callAI(key, msgs) {
   try {
-    if (S.ollamaKeys.includes(key)) return await ollamaCall(msgs, S.memory, S.ollamaModels[key]);
+    const sys = getSystemPrompt(key);
+    if (S.ollamaKeys.includes(key)) return await ollamaCall(msgs, sys, S.ollamaModels[key]);
     const apiKey = S.apiKeys[key];
     if (!apiKey) return null;
-    return await AIS[key].call(apiKey, msgs, S.memory);
+    return await AIS[key].call(apiKey, msgs, sys);
   } catch (err) {
     addDebateBubble(key, 'assistant', '⚠ ' + err.message, 0);
     return null;
   }
+}
+
+async function callAIVision(key, msgs, systemPrompt, lastText, images) {
+  const apiKey = S.apiKeys[key];
+  if (!apiKey) return null;
+
+  if (key === 'chatgpt' || key === 'grok') {
+    const parts = images.map(img => ({ type: 'image_url', image_url: { url: `data:${img.mimeType};base64,${img.base64}` } }));
+    if (lastText) parts.push({ type: 'text', text: lastText });
+    const msgsForCall = [
+      ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+      ...msgs.slice(0, -1),
+      { role: 'user', content: parts }
+    ];
+    const endpoint = key === 'chatgpt' ? 'https://api.openai.com/v1/chat/completions' : 'https://api.x.ai/v1/chat/completions';
+    const model = key === 'chatgpt' ? 'gpt-4o' : 'grok-2-vision-1212';
+    const res = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model, messages: msgsForCall }) });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
+    return (await res.json()).choices?.[0]?.message?.content || '';
+
+  } else if (key === 'claude') {
+    const parts = images.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.mimeType, data: img.base64 } }));
+    if (lastText) parts.push({ type: 'text', text: lastText });
+    const msgsForCall = [...msgs.slice(0, -1), { role: 'user', content: parts }];
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, system: systemPrompt || undefined, messages: msgsForCall }) });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
+    return (await res.json()).content?.[0]?.text || '';
+
+  } else if (key === 'gemini') {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const parts = images.map(img => ({ inline_data: { mime_type: img.mimeType, data: img.base64 } }));
+    if (lastText) parts.push({ text: lastText });
+    const prevMsgs = msgs.slice(0, -1).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+    const body = { contents: [...prevMsgs, { role: 'user', parts }] };
+    if (systemPrompt) body.system_instruction = { parts: [{ text: systemPrompt }] };
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
+    return (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
+  return null;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────

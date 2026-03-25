@@ -475,3 +475,102 @@ code { font-family: monospace; font-size: 10px; color: #666; background: var(--b
   font-size: 10px; color: #7c6aff; text-decoration: none; transition: opacity 0.12s;
 }
 .memstore-link:hover { opacity: 0.75; text-decoration: underline; }
+
+/* ── IMAGE UPLOAD ────────────────────────────────────────────── */
+.img-upload-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 5px; cursor: pointer;
+  font-size: 12px; flex-shrink: 0; background: transparent;
+  border: 1px solid var(--border); transition: all 0.12s; color: var(--text3);
+}
+.img-upload-btn:hover { border-color: var(--border2); color: var(--text2); background: var(--bg3); }
+.image-preview-strip {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  padding: 5px 8px 0; flex-shrink: 0;
+}
+.img-thumb {
+  position: relative; width: 44px; height: 44px; border-radius: 4px;
+  overflow: hidden; border: 1px solid var(--border2); flex-shrink: 0;
+}
+.img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-thumb-rm {
+  position: absolute; top: 1px; right: 1px; background: rgba(0,0,0,0.7);
+  border: none; color: #fff; font-size: 8px; cursor: pointer;
+  border-radius: 2px; padding: 1px 3px; line-height: 1;
+}
+.img-thumb-rm:hover { background: #e55; }
+.bubble-imgs { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+.bubble-img-thumb {
+  max-width: 80px; max-height: 60px; border-radius: 3px;
+  object-fit: cover; border: 1px solid var(--border);
+}
+.panel.drag-over { outline: 2px dashed #7c6aff; outline-offset: -2px; }
+
+/* ── PERSONA POPOVER ─────────────────────────────────────────── */
+.persona-btn { font-size: 12px; padding: 2px 5px; }
+.persona-btn.persona-active { color: #b89aff; border-color: #5a4a99; }
+.persona-popover {
+  background: var(--bg3); border-bottom: 1px solid var(--border);
+  padding: 8px 10px; flex-shrink: 0;
+}
+.persona-presets { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.preset-chip {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg4); color: var(--text3);
+  cursor: pointer; transition: all 0.12s;
+}
+.preset-chip:hover { color: var(--text2); border-color: var(--border2); }
+.persona-textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 5px; padding: 6px 8px; color: var(--text2);
+  font-size: 11px; font-family: inherit; resize: none; outline: none;
+  line-height: 1.5; min-height: 50px; max-height: 100px; display: block;
+}
+.persona-textarea:focus { border-color: var(--border2); color: var(--text); }
+.persona-textarea::placeholder { color: #2a2a2a; }
+.persona-footer {
+  display: flex; align-items: center; gap: 6px; margin-top: 6px;
+}
+.pf-btn {
+  font-size: 10px; padding: 3px 8px; border-radius: 4px;
+  border: 1px solid var(--border); background: transparent; color: var(--text3);
+  cursor: pointer; transition: all 0.1s;
+}
+.pf-btn:hover { color: var(--text2); border-color: var(--border2); }
+
+/* ── PANEL ZOOM ──────────────────────────────────────────────── */
+.zoom-btn { font-size: 12px; padding: 1px 5px; }
+.panel.zoomed {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 / -1 !important;
+}
+
+/* ── PINNED MESSAGES ─────────────────────────────────────────── */
+.pinned-section {
+  border-bottom: 1px solid #2a2010; background: #110e00; flex-shrink: 0;
+}
+.pinned-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 10px; font-size: 10px; color: #8a7020;
+}
+.pinned-toggle {
+  background: none; border: none; color: #665520; cursor: pointer;
+  font-size: 10px; padding: 0 2px;
+}
+.pinned-list { padding: 0 0 4px; }
+.pinned-item {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding: 3px 10px; border-bottom: 1px solid #1a1200;
+}
+.pinned-text {
+  flex: 1; font-size: 10px; color: #7a6a30; line-height: 1.4;
+  white-space: pre-wrap; word-break: break-word;
+}
+.pinned-rm {
+  background: none; border: none; color: #443; cursor: pointer;
+  font-size: 9px; padding: 1px 3px; flex-shrink: 0;
+}
+.pinned-rm:hover { color: #e55; }
+.ma-btn.pin-btn { color: #6a5010; }
+.ma-btn.pin-btn:hover { color: #aa8020; }
+.ma-btn.pin-btn:disabled { opacity: 0.4; cursor: default; }
