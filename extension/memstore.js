@@ -91,3 +91,8 @@ const Memstore = (() => {
 
   return { getKey, saveKey, clearKey, init, testConnection, remember, recall, forget, rememberResponse, recallOnLaunch };
 })();
+
+// Expose as a global so popup.html can load this as a plain <script> tag
+// without needing ES module import/export (which Chrome extensions don't support
+// in non-module scripts)
+window.Memstore = Memstore;
