@@ -133,7 +133,7 @@ nav {
 .audience-card {
   background: #111; border: 1px solid #1e1e1e;
   border-radius: 10px; padding: 24px 20px;
-  text-align: left;
+  text-align: left; min-width: 0;
 }
 .audience-icon { font-size: 24px; margin-bottom: 12px; display: block; }
 .audience-card h3 {
