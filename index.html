@@ -3,8 +3,17 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Hub — Chat with every AI. At the same time.</title>
-  <meta name="description" content="ChatGPT, Claude, Gemini, Grok, and local Ollama models in one interface. Compare answers, run structured debates, and build shared memory across all of them."/>
+  <title>AI Hub — Chat with every AI at the same time</title>
+  <meta name="description" content="Chat with ChatGPT, Claude, Gemini, Grok, and local Ollama models in one interface. Compare answers, run AI debates, and build shared memory. Free to use."/>
+  <meta property="og:title" content="AI Hub — Chat with every AI at the same time"/>
+  <meta property="og:description" content="Compare ChatGPT, Claude, Gemini, and Grok side by side. Broadcast, debate, relay. Free to use."/>
+  <meta property="og:url" content="https://aihubdash.com"/>
+  <meta property="og:type" content="website"/>
+  <meta name="twitter:card" content="summary"/>
+  <meta name="twitter:title" content="AI Hub"/>
+  <meta name="twitter:description" content="Chat with every AI at the same time. Free to use."/>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg"/>
+  <link rel="icon" type="image/png" href="./favicon.svg"/>
   <link rel="stylesheet" href="landing.css"/>
 </head>
 <body>
@@ -22,19 +31,24 @@
 <!-- HERO -->
 <section class="hero">
   <div class="container hero-inner">
-    <h1>Chat with every AI.<br>At the same time.</h1>
-    <p class="hero-sub">ChatGPT, Claude, Gemini, Grok, and local Ollama models in one interface. Compare answers, run structured debates, and build shared memory across all of them.</p>
+    <h1>One tab.<br>Every AI.</h1>
+    <p class="hero-sub">Stop juggling ChatGPT, Claude, Gemini, and Grok across tabs. AI Hub puts them side by side — compare answers, run structured debates, and build shared memory. Free and open to use.</p>
     <div class="hero-btns">
       <a href="./dashboard/index.html" class="btn-primary">Try the dashboard →</a>
     </div>
-    <p class="hero-trust">Free and open source · No account required · Your API keys never leave your browser</p>
+    <div class="trust-badges">
+      <span class="trust-badge">⚡ Free to use</span>
+      <span class="trust-badge">🔒 No account required</span>
+      <span class="trust-badge">🖥 Works in your browser</span>
+    </div>
   </div>
 </section>
 
 <!-- FEATURES -->
 <section class="features">
   <div class="container">
-    <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+    <h2 class="section-title">Built for people who use AI seriously.</h2>
+    <p class="section-sub">Not just another chatbot wrapper. AI Hub lets models work together.</p>
     <div class="feature-grid">
       <div class="feature-card">
         <div class="feature-icon">⚡</div>
@@ -70,6 +84,35 @@
   </div>
 </section>
 
+<!-- WHO IS THIS FOR -->
+<section class="audience-section">
+  <div class="container">
+    <h2 class="section-title">Built for</h2>
+    <div class="audience-grid">
+      <div class="audience-card">
+        <span class="audience-icon">🧑‍💻</span>
+        <h3>Developers</h3>
+        <p>Compare how different models handle your code questions. Use local Ollama models free. Bring your own API keys.</p>
+      </div>
+      <div class="audience-card">
+        <span class="audience-icon">✍️</span>
+        <h3>Writers & Creators</h3>
+        <p>Get multiple angles on any topic instantly. Run brainstorm mode to generate and refine ideas across 4 AI perspectives.</p>
+      </div>
+      <div class="audience-card">
+        <span class="audience-icon">🔬</span>
+        <h3>Researchers</h3>
+        <p>Use debate mode to stress-test ideas. Conflict detection flags when models disagree. Export full sessions as markdown.</p>
+      </div>
+      <div class="audience-card">
+        <span class="audience-icon">🏢</span>
+        <h3>Teams & Founders</h3>
+        <p>Save prompt libraries, memory templates, and personas. Connect Memstore for persistent memory across sessions and devices.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- HOW IT WORKS -->
 <section class="how">
   <div class="container">
@@ -77,20 +120,20 @@
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
-        <h3>Configure</h3>
-        <p>Set each AI to API mode (your key, direct billing) or Native mode (your real logged-in account). Or just hit Try Demo.</p>
+        <h3>Set up in 30 seconds</h3>
+        <p>Enter your API keys or try demo mode instantly. Set each AI to API, Native (your real account), or Off.</p>
       </div>
       <div class="step-divider"></div>
       <div class="step">
         <div class="step-num">2</div>
-        <h3>Compare</h3>
-        <p>Broadcast any question to all active AIs at once. See different answers side by side in 1, 2, 3, or 4-panel layouts.</p>
+        <h3>Ask once, hear from all</h3>
+        <p>Broadcast any question to all active AIs. See genuinely different answers side by side.</p>
       </div>
       <div class="step-divider"></div>
       <div class="step">
         <div class="step-num">3</div>
-        <h3>Collaborate</h3>
-        <p>Run a structured debate, relay responses as context, or let AIs build on each other's ideas across rounds.</p>
+        <h3>Let them build on each other</h3>
+        <p>Run a structured debate where AIs react to each other's answers. Or relay responses as shared context across all panels.</p>
       </div>
     </div>
   </div>
@@ -233,15 +276,49 @@
   </div>
 </section>
 
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container">
+    <h2 class="section-title">Common questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Is AI Hub really free?</div>
+        <div class="faq-a">Yes. AI Hub itself is completely free. You pay only for your own API usage directly to each provider — OpenAI, Anthropic, Google, xAI. Gemini has a free API tier with no credit card needed, so you can start for free right now.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Are my API keys safe?</div>
+        <div class="faq-a">Yes. Your keys never leave your browser. AI Hub has no backend server — every API call goes directly from your browser to each AI provider. We physically cannot see your keys.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What's the difference between API mode and Native mode?</div>
+        <div class="faq-a">API mode uses your API key to chat directly inside AI Hub. Native mode opens your real logged-in account in a browser tab — keeping your full chat history, memory, and subscription features intact.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What is Ollama?</div>
+        <div class="faq-a">Ollama lets you run AI models like Llama3, Mistral, and Phi3 locally on your computer — completely free and private. No API key needed. AI Hub connects to your local Ollama instance automatically.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What is Memstore?</div>
+        <div class="faq-a">Memstore is a persistent memory API that lets AI Hub remember things across sessions and devices. AI Hub's built-in memory resets when you close the browser — Memstore makes it permanent. Free tier available at memstore.dev.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is there a browser extension?</div>
+        <div class="faq-a">Yes — AI Hub is also available as a Chrome and Opera GX extension. Same features in a popup, always one click away. Chrome Web Store listing coming soon.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- FOOTER -->
 <footer>
   <div class="container footer-inner">
-    <span class="footer-left">AI Hub — open source multi-AI interface</span>
+    <span class="footer-left">AI Hub · aihubdash.com</span>
     <div class="footer-links">
       <a href="./dashboard/index.html">Dashboard</a>
       <a href="https://memstore.dev" target="_blank">Memstore</a>
+      <a href="https://memstore.dev" target="_blank">memstore.dev</a>
     </div>
-    <span class="footer-right">Powered by your own API keys · No data collected</span>
+    <span class="footer-right">© 2025 · Powered by your own API keys</span>
   </div>
 </footer>
 
