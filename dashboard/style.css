@@ -675,3 +675,45 @@ code { font-family: monospace; font-size: 11px; color: #666; background: var(--b
 .ma-btn.pin-btn { color: #6a5010; }
 .ma-btn.pin-btn:hover { color: #aa8020; }
 .ma-btn.pin-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ── MARKDOWN IN BUBBLES ─────────────────────────────────────── */
+.bubble h1, .bubble h2, .bubble h3 { font-size: 14px; font-weight: 600; color: #e0e0e0; margin: 10px 0 4px; }
+.bubble h1 { font-size: 15px; }
+.bubble p { margin: 0 0 8px; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble ul, .bubble ol { padding-left: 18px; margin: 4px 0 8px; }
+.bubble li { margin: 2px 0; line-height: 1.5; }
+.bubble code { font-family: 'Courier New', monospace; font-size: 11px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 1px 5px; color: #a0c4ff; }
+.bubble pre { background: #0a0a0a; border: 1px solid #222; border-radius: 6px; padding: 10px 12px; overflow-x: auto; margin: 8px 0; }
+.bubble pre code { background: none; border: none; padding: 0; font-size: 12px; color: #a0c4ff; line-height: 1.6; }
+.bubble strong { color: #e0e0e0; font-weight: 600; }
+.bubble em { color: #aaa; }
+.bubble blockquote { border-left: 3px solid #333; margin: 6px 0; padding: 4px 10px; color: #888; }
+.bubble a { color: #7c6aff; text-decoration: none; }
+.bubble a:hover { text-decoration: underline; }
+.bubble table { border-collapse: collapse; width: 100%; font-size: 12px; margin: 8px 0; }
+.bubble th, .bubble td { border: 1px solid #222; padding: 5px 8px; text-align: left; }
+.bubble th { background: #161616; color: #ccc; }
+.bubble hr { border: none; border-top: 1px solid #222; margin: 8px 0; }
+
+/* ── SHORTCUTS MODAL ─────────────────────────────────────────── */
+.shortcuts-modal { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; }
+.shortcuts-card { background: #131313; border: 1px solid #2e2e2e; border-radius: 10px; padding: 20px 24px; min-width: 280px; }
+.shortcuts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 13px; font-weight: 500; color: #e0e0e0; }
+.shortcuts-close { background: none; border: none; color: #555; cursor: pointer; font-size: 14px; padding: 0; }
+.shortcuts-close:hover { color: #aaa; }
+.shortcuts-list { display: flex; flex-direction: column; gap: 10px; }
+.shortcut-row { display: flex; align-items: center; gap: 6px; }
+.shortcut-row span { font-size: 12px; color: #666; margin-left: 4px; }
+kbd { display: inline-flex; align-items: center; justify-content: center; background: #1e1e1e; border: 1px solid #333; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-family: monospace; color: #aaa; min-width: 20px; }
+
+/* ── WORKFLOWS ───────────────────────────────────────────────── */
+.workflow-save-row { padding: 8px 12px; border-bottom: 1px solid #1a1a1a; display: flex; gap: 6px; align-items: center; }
+.workflows-list { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+.workflow-card { background: #0e0e0e; border: 1px solid #1e1e1e; border-radius: 6px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.workflow-info { flex: 1; }
+.workflow-name { font-size: 12px; font-weight: 500; color: #ccc; margin-bottom: 4px; }
+.workflow-meta { display: flex; gap: 5px; flex-wrap: wrap; }
+.workflow-pill { font-size: 9px; padding: 1px 6px; border-radius: 8px; border: 1px solid #222; color: #555; background: #161616; }
+.workflow-pill.active { color: #4a9; border-color: #1a3028; background: #0d1f18; }
+.workflow-actions { display: flex; gap: 4px; }

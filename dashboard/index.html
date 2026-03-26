@@ -92,6 +92,8 @@
       <button class="tb-btn" id="memBtn">memory</button>
       <button class="tb-btn" id="padBtn">pad</button>
       <button class="tb-btn" id="exportBtn">export</button>
+      <button class="tb-btn" id="workflowsBtn">workflows</button>
+      <button class="tb-btn" id="shortcutsBtn" title="Keyboard shortcuts (?)">?</button>
       <button class="tb-btn settings" id="settingsBtn">⚙ settings</button>
     </div>
   </div>
@@ -234,6 +236,46 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Shortcuts Modal -->
+<div class="shortcuts-modal" id="shortcutsModal" style="display:none;">
+  <div class="shortcuts-card">
+    <div class="shortcuts-header">
+      <span>Keyboard shortcuts</span>
+      <button class="shortcuts-close" id="shortcutsClose">✕</button>
+    </div>
+    <div class="shortcuts-list">
+      <div class="shortcut-row"><kbd>B</kbd><span>Focus broadcast</span></div>
+      <div class="shortcut-row"><kbd>M</kbd><span>Toggle memory</span></div>
+      <div class="shortcut-row"><kbd>P</kbd><span>Prompt library</span></div>
+      <div class="shortcut-row"><kbd>D</kbd><span>Debate mode</span></div>
+      <div class="shortcut-row"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span>Switch layout</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>Enter</kbd><span>Send broadcast</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>E</kbd><span>Export session</span></div>
+      <div class="shortcut-row"><kbd>Esc</kbd><span>Close drawers</span></div>
+      <div class="shortcut-row"><kbd>?</kbd><span>Show this help</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Workflows Drawer -->
+<div class="drawer" id="workflowsDrawer" style="display:none;">
+  <div class="drawer-top">
+    <span>workflows <span class="drawer-sub">save & restore panel setups</span></span>
+    <div class="drawer-acts">
+      <button class="db-btn" id="saveWorkflowBtn">save current</button>
+      <button class="db-btn" id="closeWorkflowsBtn">✕</button>
+    </div>
+  </div>
+  <div class="workflow-save-row" id="workflowSaveRow" style="display:none;">
+    <input type="text" id="workflowNameInput" class="sinput" placeholder="Workflow name e.g. Morning Research"/>
+    <button class="db-btn" id="confirmSaveWorkflow">save</button>
+    <button class="db-btn" id="cancelSaveWorkflow">cancel</button>
+  </div>
+  <div class="workflows-list" id="workflowsList"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="memstore.js"></script>
 <script src="app.js"></script>
 </body>
