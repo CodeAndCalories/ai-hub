@@ -788,6 +788,8 @@ function addBubble(key, role, text, images) {
     });
     bubble.appendChild(imgRow);
     if (text) { const t = document.createElement('div'); t.textContent = text; bubble.appendChild(t); }
+  } else if (role === 'assistant' && typeof marked !== 'undefined') {
+    bubble.innerHTML = marked.parse(text);
   } else {
     bubble.textContent = text;
   }
@@ -1017,6 +1019,7 @@ function bindDrawers() {
   };
   document.getElementById('memBtn').addEventListener('click', () => {
     toggle(memD, padD);
+    document.getElementById('workflowsDrawer').style.display = 'none';
     document.getElementById('memText').value = S.memory;
     const lbl = document.getElementById('memLabelDisplay');
     if (lbl) lbl.textContent = S.memoryLabel ? `· ${S.memoryLabel}` : '';
@@ -1025,7 +1028,7 @@ function bindDrawers() {
   document.getElementById('autoSumBtn').addEventListener('click', autoSummarizeAll);
   document.getElementById('closeMemBtn').addEventListener('click', () => { memD.style.display = 'none'; });
   document.getElementById('memText').addEventListener('input', e => { S.memory = e.target.value; });
-  document.getElementById('padBtn').addEventListener('click', () => toggle(padD, memD));
+  document.getElementById('padBtn').addEventListener('click', () => { toggle(padD, memD); document.getElementById('workflowsDrawer').style.display = 'none'; });
   document.getElementById('clearPadBtn').addEventListener('click', () => { document.getElementById('padText').value = ''; showToast('Cleared'); });
   document.getElementById('closePadBtn').addEventListener('click', () => { padD.style.display = 'none'; });
   bindMemstore();
@@ -1242,7 +1245,8 @@ function addDebateBubble(key, role, text, round) {
   const wrap = document.createElement('div');
   wrap.className = `msg ${role} debate-round r${round}`;
   const bubble = document.createElement('div');
-  bubble.className = 'bubble'; bubble.textContent = text;
+  bubble.className = 'bubble';
+  if (role === 'assistant' && typeof marked !== 'undefined') { bubble.innerHTML = marked.parse(text); } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   if (role === 'assistant') {
     const acts = document.createElement('div');
@@ -1271,7 +1275,8 @@ function addSummaryBubble(key, text) {
   const wrap = document.createElement('div');
   wrap.className = 'msg assistant summary-msg';
   const bubble = document.createElement('div');
-  bubble.className = 'bubble'; bubble.textContent = text;
+  bubble.className = 'bubble';
+  if (typeof marked !== 'undefined') { bubble.innerHTML = marked.parse(text); } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   const acts = document.createElement('div');
   acts.className = 'msg-actions';
@@ -1371,7 +1376,12 @@ function bindMain() {
 
   bindDebate();
   bindDrawers(); bindTemplates();
+  bindKeyboardShortcuts();
+  bindWorkflows();
   document.getElementById('settingsBtn').addEventListener('click', goToSettings);
+  document.getElementById('shortcutsBtn').addEventListener('click', () => {
+    document.getElementById('shortcutsModal').style.display = 'flex';
+  });
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -1380,6 +1390,150 @@ function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Keyboard Shortcuts ────────────────────────────────────────────────────────
+
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', e => {
+    const modal = document.getElementById('shortcutsModal');
+
+    if (e.key === 'Escape') {
+      if (modal && modal.style.display !== 'none') { modal.style.display = 'none'; return; }
+      ['memDrawer','padDrawer','tplPanel','debateBar','workflowsDrawer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.style.display !== 'none') el.style.display = 'none';
+      });
+      document.querySelectorAll('.persona-popover').forEach(p => p.style.display = 'none');
+      return;
+    }
+
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    if (e.key === '?') {
+      if (modal) modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+      return;
+    }
+
+    if (e.key === 'b' || e.key === 'B') {
+      const bi = document.getElementById('broadcastInput');
+      if (bi) { bi.focus(); e.preventDefault(); }
+    }
+    if (e.key === 'm' || e.key === 'M') { document.getElementById('memBtn')?.click(); }
+    if (e.key === 'd' || e.key === 'D') { document.getElementById('debateBtn')?.click(); }
+    if (['1','2','3','4'].includes(e.key)) { setView(parseInt(e.key)); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      const bi = document.getElementById('broadcastInput');
+      if (bi && bi.value.trim()) { document.getElementById('broadcastBtn')?.click(); e.preventDefault(); }
+    }
+  });
+
+  document.getElementById('shortcutsClose')?.addEventListener('click', () => {
+    document.getElementById('shortcutsModal').style.display = 'none';
+  });
+}
+
+// ── Workflows ─────────────────────────────────────────────────────────────────
+
+const DEFAULT_WORKFLOWS = [
+  { name: "Morning Research", view: 4, memory: "I am researching and want thorough, sourced answers. Prioritise accuracy over brevity.", modes: { chatgpt: 'api', claude: 'api', gemini: 'api', grok: 'api' } },
+  { name: "Code Review", view: 2, memory: "You are a senior software engineer. Review code critically. Point out bugs, edge cases, and improvements.", modes: { chatgpt: 'api', claude: 'api', gemini: 'off', grok: 'off' } },
+  { name: "Creative Brainstorm", view: 4, memory: "Be creative and unconventional. Avoid obvious answers. Think laterally.", modes: { chatgpt: 'api', claude: 'api', gemini: 'api', grok: 'api' } }
+];
+
+let _cachedWorkflows = null;
+
+function loadWorkflows(cb) {
+  if (_cachedWorkflows) { cb(_cachedWorkflows); return; }
+  chrome.storage.local.get(['aihub_workflows'], d => {
+    _cachedWorkflows = d.aihub_workflows || [];
+    cb(_cachedWorkflows);
+  });
+}
+
+function saveWorkflowsToStorage(workflows) {
+  _cachedWorkflows = workflows;
+  chrome.storage.local.set({ aihub_workflows: workflows });
+}
+
+function renderWorkflows() {
+  loadWorkflows(workflows => {
+    const list = document.getElementById('workflowsList');
+    const all = workflows.length ? workflows : DEFAULT_WORKFLOWS;
+    list.innerHTML = '';
+    all.forEach((wf, i) => {
+      const card = document.createElement('div');
+      card.className = 'workflow-card';
+      const info = document.createElement('div');
+      info.className = 'workflow-info';
+      const name = document.createElement('div');
+      name.className = 'workflow-name'; name.textContent = wf.name;
+      const meta = document.createElement('div');
+      meta.className = 'workflow-meta';
+      const modeKeys = wf.modes || {};
+      ['chatgpt','claude','gemini','grok'].forEach(k => {
+        const pill = document.createElement('span');
+        pill.className = 'workflow-pill' + (modeKeys[k] === 'api' ? ' active' : '');
+        pill.textContent = AIS[k]?.name || k;
+        meta.appendChild(pill);
+      });
+      const viewPill = document.createElement('span');
+      viewPill.className = 'workflow-pill'; viewPill.textContent = `${wf.view} panel${wf.view > 1 ? 's' : ''}`;
+      meta.appendChild(viewPill);
+      info.appendChild(name); info.appendChild(meta);
+      const actions = document.createElement('div');
+      actions.className = 'workflow-actions';
+      const loadBtn = document.createElement('button');
+      loadBtn.className = 'db-btn'; loadBtn.textContent = 'load';
+      loadBtn.addEventListener('click', () => {
+        S.memory = wf.memory || '';
+        const mt = document.getElementById('memText'); if (mt) mt.value = S.memory;
+        setView(wf.view || 4);
+        document.getElementById('workflowsDrawer').style.display = 'none';
+        showToast(`Workflow loaded: ${wf.name}`);
+      });
+      actions.appendChild(loadBtn);
+      if (workflows.length) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'db-btn'; delBtn.textContent = '✕';
+        delBtn.addEventListener('click', () => { workflows.splice(i, 1); saveWorkflowsToStorage(workflows); renderWorkflows(); });
+        actions.appendChild(delBtn);
+      }
+      card.appendChild(info); card.appendChild(actions);
+      list.appendChild(card);
+    });
+  });
+}
+
+function bindWorkflows() {
+  const wfDrawer = document.getElementById('workflowsDrawer');
+  document.getElementById('workflowsBtn').addEventListener('click', () => {
+    ['memDrawer','padDrawer'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+    const open = wfDrawer.style.display !== 'none';
+    wfDrawer.style.display = open ? 'none' : 'flex';
+    if (!open) { wfDrawer.style.flexDirection = 'column'; renderWorkflows(); }
+  });
+  document.getElementById('closeWorkflowsBtn').addEventListener('click', () => { wfDrawer.style.display = 'none'; });
+  document.getElementById('saveWorkflowBtn').addEventListener('click', () => {
+    const row = document.getElementById('workflowSaveRow');
+    row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+  });
+  document.getElementById('confirmSaveWorkflow').addEventListener('click', () => {
+    const name = document.getElementById('workflowNameInput').value.trim();
+    if (!name) { showToast('Enter a workflow name'); return; }
+    loadWorkflows(workflows => {
+      workflows.push({ name, view: S.view, memory: S.memory, modes: { ...S.modes } });
+      saveWorkflowsToStorage(workflows);
+      document.getElementById('workflowNameInput').value = '';
+      document.getElementById('workflowSaveRow').style.display = 'none';
+      renderWorkflows();
+      showToast(`Workflow "${name}" saved`);
+    });
+  });
+  document.getElementById('cancelSaveWorkflow').addEventListener('click', () => {
+    document.getElementById('workflowSaveRow').style.display = 'none';
+  });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
