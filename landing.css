@@ -59,7 +59,7 @@ nav {
 .nav-cta:hover { border-color: #444; background: #1e1e1e; }
 
 /* ── HERO ──────────────────────────────────────────────────────── */
-.hero { padding: 100px 0 90px; }
+.hero { padding: 60px 0 90px; }
 .hero-inner { max-width: 780px; }
 .hero h1 {
   font-size: 52px; font-weight: 700; line-height: 1.1;
@@ -69,7 +69,7 @@ nav {
   font-size: 18px; color: var(--text2); line-height: 1.7;
   max-width: 620px; margin-bottom: 36px;
 }
-.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
 .btn-primary {
   display: inline-block; padding: 13px 26px; border-radius: var(--radius);
   background: #fff; color: #000; font-size: 15px; font-weight: 500;
@@ -82,12 +82,27 @@ nav {
   font-size: 15px; font-weight: 400; text-decoration: none; transition: all 0.15s;
 }
 .btn-secondary:hover { border-color: #444; color: var(--text); }
-.hero-trust { font-size: 12px; color: var(--text3); }
+
+/* Trust badges */
+.trust-badges {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 20px;
+}
+.trust-badge {
+  font-size: 12px; color: #666;
+  background: #111; border: 1px solid #222;
+  border-radius: 20px; padding: 4px 12px;
+  display: flex; align-items: center; gap: 5px;
+}
 
 /* ── SECTION TITLES ────────────────────────────────────────────── */
 .section-title {
   font-size: 28px; font-weight: 600; letter-spacing: -0.02em;
   color: #fff; margin-bottom: 40px;
+}
+.section-sub {
+  font-size: 15px; color: var(--text2); line-height: 1.7;
+  margin-top: -28px; margin-bottom: 40px;
 }
 
 /* ── FEATURES ──────────────────────────────────────────────────── */
@@ -108,6 +123,24 @@ nav {
   margin-bottom: 8px; letter-spacing: -0.01em;
 }
 .feature-card p { font-size: 13px; color: var(--text2); line-height: 1.7; }
+
+/* ── AUDIENCE SECTION ─────────────────────────────────────────── */
+.audience-section { padding: 80px 0; text-align: center; }
+.audience-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-top: 40px;
+}
+.audience-card {
+  background: #111; border: 1px solid #1e1e1e;
+  border-radius: 10px; padding: 24px 20px;
+  text-align: left;
+}
+.audience-icon { font-size: 24px; margin-bottom: 12px; display: block; }
+.audience-card h3 {
+  font-size: 15px; font-weight: 500;
+  color: #e0e0e0; margin-bottom: 8px;
+}
+.audience-card p { font-size: 13px; color: #666; line-height: 1.6; }
 
 /* ── HOW IT WORKS ──────────────────────────────────────────────── */
 .how { padding: 80px 0; border-top: 1px solid var(--border); }
@@ -214,9 +247,24 @@ tbody tr:hover td.aihub-col { background: rgba(74, 153, 102, 0.1); }
 .ext-dot { width: 28px; height: 28px; border-radius: 50%; background: #2a2a2a; }
 .ext-label { font-size: 10px; color: var(--text3); margin-top: 4px; }
 
+/* ── FAQ ───────────────────────────────────────────────────────── */
+.faq-section { padding: 80px 0; }
+.faq-section .container { max-width: 720px; }
+.faq-list {
+  margin-top: 40px; display: flex;
+  flex-direction: column; gap: 0;
+}
+.faq-item { border-top: 1px solid #1a1a1a; padding: 20px 0; }
+.faq-item:last-child { border-bottom: 1px solid #1a1a1a; }
+.faq-q {
+  font-size: 15px; font-weight: 500; color: #e0e0e0;
+  margin-bottom: 8px;
+}
+.faq-a { font-size: 14px; color: #666; line-height: 1.7; }
+
 /* ── FOOTER ────────────────────────────────────────────────────── */
 footer {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #161616;
   padding: 24px 0;
 }
 .footer-inner {
@@ -234,6 +282,7 @@ footer {
   .hero h1 { font-size: 38px; }
   .hero-sub { font-size: 16px; }
   .feature-grid { grid-template-columns: 1fr 1fr; }
+  .audience-grid { grid-template-columns: repeat(2, 1fr); }
   .steps { grid-template-columns: 1fr; gap: 28px; }
   .step-divider { display: none; }
   .callout-inner { flex-direction: column; gap: 28px; }
@@ -244,6 +293,7 @@ footer {
   .hero { padding: 60px 0; }
   .hero h1 { font-size: 30px; }
   .feature-grid { grid-template-columns: 1fr; }
+  .audience-grid { grid-template-columns: 1fr; }
   .section-title { font-size: 22px; }
   .nav-right { gap: 12px; }
   .hero-btns { flex-direction: column; }
