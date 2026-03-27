@@ -46,6 +46,19 @@
   </div>
 </section>
 
+<!-- SOCIAL PROOF BAR -->
+<div class="social-bar">
+  <span class="social-item"><span class="social-dot"></span>Open source</span>
+  <span class="social-sep">·</span>
+  <span class="social-item"><span class="social-dot green"></span>Free to use</span>
+  <span class="social-sep">·</span>
+  <span class="social-item">Works in any browser</span>
+  <span class="social-sep">·</span>
+  <span class="social-item">No account required</span>
+  <span class="social-sep">·</span>
+  <span class="social-item"><span class="social-dot purple"></span>Powered by your own API keys</span>
+</div>
+
 <!-- FEATURES -->
 <section class="features">
   <div class="container">
@@ -278,6 +291,19 @@
   </div>
 </section>
 
+<!-- EMAIL CAPTURE -->
+<section class="notify-section">
+  <div class="notify-card">
+    <h2>Stay in the loop</h2>
+    <p>Get notified when the Chrome extension hits the Web Store and when new features ship.</p>
+    <form class="notify-form" id="notifyForm">
+      <input type="email" id="notifyEmail" placeholder="your@email.com" class="notify-input"/>
+      <button type="submit" class="notify-btn">Notify me</button>
+    </form>
+    <p class="notify-fine">No spam. Unsubscribe anytime.</p>
+  </div>
+</section>
+
 <!-- FAQ -->
 <section class="faq-section">
   <div class="container">
@@ -324,5 +350,26 @@
   </div>
 </footer>
 
+<script>
+  document.getElementById('notifyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const email = document.getElementById('notifyEmail').value.trim();
+    if (!email) return;
+    try {
+      const res = await fetch('https://memstore.dev/v1/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (res.ok) {
+        this.innerHTML = '<p class="notify-success">You\'re on the list!</p>';
+      } else {
+        this.innerHTML += '<p style="color:#e07070;font-size:13px;margin-top:8px;">Something went wrong — try again</p>';
+      }
+    } catch (_) {
+      this.innerHTML += '<p style="color:#e07070;font-size:13px;margin-top:8px;">Something went wrong — try again</p>';
+    }
+  });
+</script>
 </body>
 </html>

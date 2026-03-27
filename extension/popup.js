@@ -93,8 +93,11 @@ const S = {
   activeTab:    null,
   relayOn:      false,
   personas:    {},
-  zoomed:      null
+  zoomed:      null,
+  sessionTitle: ''
 };
+
+const responseTimes = {};
 
 // Dynamic key helpers
 function allKeys()      { return [...CLOUD_KEYS, ...S.ollamaKeys]; }
@@ -517,8 +520,15 @@ function apiBody(key, name, hasKey, isOllama) {
     <div class="chat-messages" id="cm-${key}">
       <div class="empty-state" id="es-${key}">
         <span class="en">${name}</span>
-        <span class="eh">${hasKey ? (isOllama ? 'local · free · ready' : 'ready') : '⚠ no api key'}</span>
-        <span class="ek">${hasKey ? (S.memory ? 'memory loaded' : 'no memory set') : 'go to ⚙ settings'}</span>
+        <span class="eh">${hasKey ? (isOllama ? 'local · free · ready' : 'ready · memory ' + (S.memory ? 'on' : 'off')) : '⚠ no api key'}</span>
+        ${hasKey ? `<div class="quick-prompts" id="qp-${key}">
+          <p class="qp-label">Try asking:</p>
+          <button class="qp-chip" data-key="${key}" data-prompt="Explain this simply: ">Explain something</button>
+          <button class="qp-chip" data-key="${key}" data-prompt="Write a quick summary of: ">Summarize</button>
+          <button class="qp-chip" data-key="${key}" data-prompt="What are the pros and cons of: ">Pros &amp; cons</button>
+          <button class="qp-chip" data-key="${key}" data-prompt="Give me 5 creative ideas for: ">Brainstorm ideas</button>
+          <button class="qp-chip" data-key="${key}" data-prompt="Review and improve this: ">Review &amp; improve</button>
+        </div>` : ''}
       </div>
     </div>
     <div class="image-preview-strip" id="ips-${key}" style="display:none;"></div>
@@ -562,6 +572,17 @@ function bindChat(key) {
       e.preventDefault(); panel.classList.remove('drag-over');
       const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
       if (files.length) handleImageFiles(key, files);
+    });
+  }
+
+  // Quick prompt chips
+  const qp = document.getElementById('qp-' + key);
+  if (qp) {
+    qp.addEventListener('click', e => {
+      const chip = e.target.closest('.qp-chip');
+      if (!chip) return;
+      const ta2 = document.getElementById('ct-' + chip.dataset.key);
+      if (ta2) { ta2.value = chip.dataset.prompt; ta2.focus(); }
     });
   }
 }
@@ -689,6 +710,7 @@ async function send(key, textOverride, isRelay) {
   }
 
   const tid = addTyping(key);
+  responseTimes[key] = Date.now();
   S.loading[key] = true; setSend(key, true);
 
   try {
@@ -701,12 +723,14 @@ async function send(key, textOverride, isRelay) {
         ? await ollamaCall(S.histories[key], sys, S.ollamaModels[key])
         : await AIS[key].call(S.apiKeys[key], S.histories[key], sys);
     }
+    const elapsed = ((Date.now() - responseTimes[key]) / 1000).toFixed(1) + 's';
     removeEl(tid);
     S.histories[key].push({ role: 'assistant', content: reply });
-    addBubble(key, 'assistant', reply);
+    addBubble(key, 'assistant', reply, null, elapsed);
     const shown = S.view === 4 ? visibleKeys() : buildShownList(S.view);
     if (!shown.includes(key)) { S.unread[key] = (S.unread[key] || 0) + 1; buildTabBar(S.view, visibleKeys()); }
     if (S.histories[key].length % 20 === 0) autoSummarizeOne(key);
+    if (S.histories[key].length === 2 && !S.sessionTitle) { generateSessionTitle(); }
     // Memstore auto-save — fire-and-forget
     const aiName = S.ollamaKeys.includes(key) ? `Ollama·${S.ollamaModels[key]}` : (AIS[key]?.name || key);
     Memstore.rememberResponse(aiName, text, reply);
@@ -769,7 +793,7 @@ async function broadcastAndRelay(text) {
 
 // ── Bubble helpers ────────────────────────────────────────────────────────────
 
-function addBubble(key, role, text, images) {
+function addBubble(key, role, text, images, elapsed) {
   const cm = document.getElementById('cm-' + key);
   if (!cm) return;
   const wrap = document.createElement('div');
@@ -789,9 +813,26 @@ function addBubble(key, role, text, images) {
     bubble.appendChild(imgRow);
     if (text) { const t = document.createElement('div'); t.textContent = text; bubble.appendChild(t); }
   } else if (role === 'assistant' && typeof marked !== 'undefined') {
-    bubble.innerHTML = marked.parse(text);
+    bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text);
   } else {
     bubble.textContent = text;
+  }
+
+  // Copy buttons on code blocks
+  if (role === 'assistant') {
+    bubble.querySelectorAll('pre').forEach(pre => {
+      const code = pre.querySelector('code');
+      if (!code) return;
+      const btn = document.createElement('button');
+      btn.className = 'copy-code-btn';
+      btn.textContent = 'copy';
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(code.textContent)
+          .then(() => { btn.textContent = 'copied!'; setTimeout(() => btn.textContent = 'copy', 2000); });
+      });
+      pre.style.position = 'relative';
+      pre.appendChild(btn);
+    });
   }
 
   wrap.appendChild(bubble);
@@ -817,6 +858,15 @@ function addBubble(key, role, text, images) {
     pinBtn.addEventListener('click', () => pinMessage(key, text, pinBtn));
     acts.appendChild(c); acts.appendChild(p); acts.appendChild(s); acts.appendChild(pinBtn);
     wrap.appendChild(acts);
+
+    if (elapsed) {
+      const words = text.split(/\s+/).filter(Boolean).length;
+      const chars = text.length;
+      const meta = document.createElement('div');
+      meta.className = 'response-meta';
+      meta.innerHTML = `<span class="response-time">${elapsed}</span><span class="response-words">${words} words</span><span class="response-chars">${chars} chars</span>`;
+      wrap.appendChild(meta);
+    }
   }
   cm.appendChild(wrap); cm.scrollTop = cm.scrollHeight;
 }
@@ -1246,7 +1296,7 @@ function addDebateBubble(key, role, text, round) {
   wrap.className = `msg ${role} debate-round r${round}`;
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  if (role === 'assistant' && typeof marked !== 'undefined') { bubble.innerHTML = marked.parse(text); } else { bubble.textContent = text; }
+  if (role === 'assistant' && typeof marked !== 'undefined') { bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text); } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   if (role === 'assistant') {
     const acts = document.createElement('div');
@@ -1276,7 +1326,7 @@ function addSummaryBubble(key, text) {
   wrap.className = 'msg assistant summary-msg';
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  if (typeof marked !== 'undefined') { bubble.innerHTML = marked.parse(text); } else { bubble.textContent = text; }
+  if (typeof marked !== 'undefined') { bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text); } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   const acts = document.createElement('div');
   acts.className = 'msg-actions';
@@ -1537,6 +1587,29 @@ function bindWorkflows() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+
+// ── Session title ─────────────────────────────────────────────────────────────
+
+async function generateSessionTitle() {
+  const sk = sendableKeys()[0];
+  if (!sk) return;
+  const samples = sendableKeys().filter(k => S.histories[k]?.length >= 2).map(k => S.histories[k][0].content).slice(0, 2).join(' / ');
+  const prompt = `Based on this conversation topic: "${samples.slice(0, 200)}" Give a 3-5 word title for this session. Respond with ONLY the title, nothing else.`;
+  try {
+    let title;
+    if (S.ollamaKeys?.includes(sk)) {
+      title = await ollamaCall([{role:'user', content: prompt}], null, S.ollamaModels[sk]);
+    } else {
+      title = await AIS[sk].call(S.apiKeys[sk], [{role:'user', content: prompt}], null);
+    }
+    if (title && title.length < 60) {
+      S.sessionTitle = title.trim();
+      const logoEl = document.querySelector('.logo');
+      if (logoEl) { logoEl.title = S.sessionTitle; }
+      showToast('Session: ' + S.sessionTitle);
+    }
+  } catch (_) {}
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   initResize();

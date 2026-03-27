@@ -299,3 +299,25 @@ footer {
   .hero-btns { flex-direction: column; }
   .btn-primary, .btn-secondary { text-align: center; }
 }
+
+/* ── SOCIAL PROOF BAR ────────────────────────────────────────── */
+.social-bar { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 16px 24px; border-top: 1px solid #161616; border-bottom: 1px solid #161616; background: #0d0d0d; font-size: 12px; color: #444; }
+.social-item { display: flex; align-items: center; gap: 5px; }
+.social-sep { color: #222; }
+.social-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; flex-shrink: 0; }
+.social-dot.green { background: #4a9966; }
+.social-dot.purple { background: #7c6aff; }
+
+/* ── EMAIL CAPTURE ───────────────────────────────────────────── */
+.notify-section { padding: 60px 0; text-align: center; }
+.notify-card { max-width: 480px; margin: 0 auto; background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 40px 32px; }
+.notify-card h2 { font-size: 22px; font-weight: 500; color: #e0e0e0; margin-bottom: 10px; }
+.notify-card p { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.6; }
+.notify-form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.notify-input { background: #0e0e0e; border: 1px solid #2a2a2a; border-radius: 7px; padding: 10px 16px; color: #e0e0e0; font-size: 14px; outline: none; width: 260px; transition: border-color 0.12s; }
+.notify-input:focus { border-color: #444; }
+.notify-input::placeholder { color: #333; }
+.notify-btn { background: #e0e0e0; color: #0a0a0a; border: none; border-radius: 7px; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+.notify-btn:hover { opacity: 0.88; }
+.notify-fine { font-size: 11px; color: #333; margin-top: 12px; margin-bottom: 0; }
+.notify-success { font-size: 14px; color: #4a9; padding: 12px 0; }
