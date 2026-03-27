@@ -616,3 +616,17 @@ kbd { display: inline-flex; align-items: center; justify-content: center; backgr
 .workflow-pill { font-size: 9px; padding: 1px 6px; border-radius: 8px; border: 1px solid #222; color: #555; background: #161616; }
 .workflow-pill.active { color: #4a9; border-color: #1a3028; background: #0d1f18; }
 .workflow-actions { display: flex; gap: 4px; }
+
+/* ── RESPONSE META ───────────────────────────────────────────── */
+.response-meta { display: flex; gap: 10px; padding: 2px 4px; margin-top: 2px; }
+.response-meta span { font-size: 10px; color: #2e2e2e; }
+
+/* ── COPY CODE BUTTON ────────────────────────────────────────── */
+.copy-code-btn { position: absolute; top: 6px; right: 6px; font-size: 10px; padding: 2px 8px; background: #1e1e1e; border: 1px solid #333; border-radius: 4px; color: #666; cursor: pointer; transition: all 0.12s; font-family: inherit; }
+.copy-code-btn:hover { color: #ccc; border-color: #555; }
+
+/* ── QUICK PROMPTS ───────────────────────────────────────────── */
+.quick-prompts { margin-top: 12px; text-align: center; }
+.qp-label { font-size: 10px; color: #2a2a2a; margin-bottom: 8px; }
+.qp-chip { display: inline-block; margin: 3px; font-size: 11px; padding: 4px 10px; background: #111; border: 1px solid #1e1e1e; border-radius: 12px; color: #3a3a3a; cursor: pointer; transition: all 0.12s; font-family: inherit; }
+.qp-chip:hover { border-color: #333; color: #777; background: #161616; }
