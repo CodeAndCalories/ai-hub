@@ -175,6 +175,17 @@ const DEFAULT_PROMPTS = [
   { name: 'Find the flaw',      text: 'What could go wrong with this plan? What am I missing: [plan]' },
 ];
 
+const COMMUNITY_PROMPTS = [
+  { name: 'Explain Like I\'m 5', text: 'Explain this concept in the simplest possible way, as if I\'m five years old. Use a relatable analogy:', tags: ['learning'] },
+  { name: 'Code Review Checklist', text: 'Review this code systematically. Check for: 1) bugs and edge cases, 2) security issues, 3) performance problems, 4) readability, 5) missing tests. Be specific:\n\n```\n[paste code here]\n```', tags: ['dev'] },
+  { name: 'Pros, Cons & Recommendation', text: 'Analyze this with a structured pros/cons breakdown, then give a clear recommendation:\n\n[topic or decision]', tags: ['analysis'] },
+  { name: 'Write Tests For This', text: 'Generate comprehensive test cases for this code. Cover happy paths, edge cases, and error scenarios:\n\n```\n[paste code here]\n```', tags: ['dev'] },
+  { name: 'Translate to [Language]', text: 'Translate the following to [target language], keeping the tone and meaning intact:\n\n[text to translate]', tags: ['writing'] },
+  { name: 'Summarize in 3 Bullets', text: 'Summarize the following in exactly 3 bullet points. Be concise and capture the most important points:\n\n[text to summarize]', tags: ['writing'] },
+  { name: 'Devil\'s Advocate', text: 'Challenge the following position with the strongest possible counterarguments. Be constructively critical:\n\n[position or idea]', tags: ['analysis'] },
+  { name: 'Step-by-Step Tutorial', text: 'Create a clear, beginner-friendly step-by-step tutorial for:\n\n[topic or task]\n\nInclude prerequisites, numbered steps, and expected outcomes for each step.', tags: ['learning'] },
+];
+
 const PERSONA_PRESETS = [
   { label: 'Concise',    text: 'Be extremely concise. Answer in 1-3 sentences maximum. No preamble.' },
   { label: 'Socratic',   text: 'Respond with probing questions that challenge my assumptions rather than direct answers.' },
@@ -304,6 +315,7 @@ function launch() {
   document.getElementById('mainScreen').style.display = 'flex';
   S.activeTab = sendableKeys()[0] || visibleKeys()[0] || null;
   buildPanels(); bindMain(); setView(S.view);
+  applyTemplateParam();
 }
 
 function goToSettings() {
@@ -717,6 +729,23 @@ function addBubble(key, role, text, images, elapsed) {
   }
 
   wrap.appendChild(bubble);
+
+  // Save-to-library link on user bubbles
+  if (role === 'user' && text) {
+    const saveLink = document.createElement('button');
+    saveLink.className = 'save-to-lib-btn';
+    saveLink.textContent = '+ save to library';
+    saveLink.addEventListener('click', () => {
+      const name = text.slice(0, 40).trim() + (text.length > 40 ? '…' : '');
+      S_prompts.push({ name, text });
+      savePrompts();
+      showToast('Saved to library');
+      saveLink.textContent = 'saved ✓';
+      saveLink.disabled = true;
+    });
+    wrap.appendChild(saveLink);
+  }
+
   if (role === 'assistant') {
     const acts = document.createElement('div');
     acts.className = 'msg-actions';
@@ -1705,34 +1734,65 @@ function savePrompts() {
   try { localStorage.setItem('aihub_prompts', JSON.stringify(S_prompts)); } catch (_) {}
 }
 
-function renderPrompts() {
-  const list = document.getElementById('promptList');
-  list.innerHTML = '';
-  if (!S_prompts.length) {
-    list.innerHTML = '<p class="prompt-empty">No prompts saved. Type in the broadcast bar and save it above.</p>';
-    return;
+function renderPromptItem(container, p, { canDelete, index, isCommunity } = {}) {
+  const item = document.createElement('div');
+  item.className = 'prompt-item';
+  const textDiv = document.createElement('div');
+  textDiv.className = 'prompt-item-text';
+  if (isCommunity && p.tags?.length) {
+    const tagsHtml = p.tags.map(t => `<span class="prompt-tag">${t}</span>`).join('');
+    textDiv.innerHTML = `<div class="prompt-item-name">${p.name} ${tagsHtml}</div><div class="prompt-item-preview">${p.text.slice(0, 80)}${p.text.length > 80 ? '…' : ''}</div>`;
+  } else {
+    textDiv.innerHTML = `<div class="prompt-item-name">${p.name}</div><div class="prompt-item-preview">${p.text.slice(0, 80)}${p.text.length > 80 ? '…' : ''}</div>`;
   }
-  S_prompts.forEach((p, i) => {
-    const item = document.createElement('div');
-    item.className = 'prompt-item';
-    const textDiv = document.createElement('div');
-    textDiv.className = 'prompt-item-text';
-    textDiv.innerHTML = `<div class="prompt-item-name">${p.name}</div><div class="prompt-item-preview">${p.text.slice(0, 60)}${p.text.length > 60 ? '…' : ''}</div>`;
-    // Click the text area → fill broadcast input
-    textDiv.addEventListener('click', () => {
+  const acts = document.createElement('div');
+  acts.className = 'prompt-item-acts';
+  const useBtn = document.createElement('button');
+  useBtn.className = 'prompt-use'; useBtn.textContent = 'Use';
+  useBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    // Fill active panel textarea if possible, otherwise broadcast
+    const activeKey = S.activeTab;
+    const ta = activeKey ? document.getElementById('ct-' + activeKey) : null;
+    if (ta && ta.offsetParent !== null) {
+      ta.value = p.text; ta.focus();
+      ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';
+    } else {
       document.getElementById('broadcastInput').value = p.text;
-      showToast(`Loaded "${p.name}"`);
-    });
+    }
+    showToast(`"${p.name}" loaded`);
+  });
+  acts.appendChild(useBtn);
+  if (canDelete) {
     const del = document.createElement('button');
     del.className = 'prompt-del'; del.textContent = '✕';
     del.addEventListener('click', e => {
       e.stopPropagation();
-      S_prompts.splice(i, 1);
+      S_prompts.splice(index, 1);
       savePrompts(); renderPrompts();
     });
-    item.appendChild(textDiv); item.appendChild(del);
-    list.appendChild(item);
-  });
+    acts.appendChild(del);
+  }
+  item.appendChild(textDiv); item.appendChild(acts);
+  container.appendChild(item);
+}
+
+function renderPrompts(filter) {
+  const list = document.getElementById('promptList');
+  const communityList = document.getElementById('communityPromptList');
+  const q = (filter || '').toLowerCase();
+  list.innerHTML = '';
+  const myFiltered = S_prompts.filter(p => !q || p.name.toLowerCase().includes(q) || p.text.toLowerCase().includes(q));
+  if (!myFiltered.length) {
+    list.innerHTML = '<p class="prompt-empty">No prompts saved. Type in the broadcast bar and click "+ save broadcast".</p>';
+  } else {
+    myFiltered.forEach((p, i) => renderPromptItem(list, p, { canDelete: true, index: S_prompts.indexOf(p) }));
+  }
+  if (communityList) {
+    communityList.innerHTML = '';
+    const commFiltered = COMMUNITY_PROMPTS.filter(p => !q || p.name.toLowerCase().includes(q) || p.text.toLowerCase().includes(q) || p.tags?.some(t => t.includes(q)));
+    commFiltered.forEach(p => renderPromptItem(communityList, p, { isCommunity: true }));
+  }
 }
 
 function bindPromptLibrary() {
@@ -1749,6 +1809,10 @@ function bindPromptLibrary() {
 
   document.getElementById('closePromptsBtn').addEventListener('click', () => {
     promptsD.style.display = 'none';
+  });
+
+  document.getElementById('promptSearchInput')?.addEventListener('input', e => {
+    renderPrompts(e.target.value);
   });
 
   document.getElementById('savePromptBtn').addEventListener('click', () => {
@@ -1781,7 +1845,7 @@ function buildExportMarkdown() {
       else                     md += `**${name}:** ${msg.content}\n\n`;
     });
   });
-  md += `---\nExported from AI Hub · https://aihubdash.com`;
+  md += `---\n*Exported from [AI Hub](https://aihubdash.com) — Multi-AI dashboard for developers*`;
   return md;
 }
 
@@ -1800,7 +1864,8 @@ function exportSession() {
 function exportSessionJSON() {
   const dateStr = new Date().toISOString().slice(0, 10);
   const data = {
-    exported: new Date().toISOString(),
+    exported_from: 'AI Hub (aihubdash.com)',
+    export_date: new Date().toISOString(),
     memory: S.memory,
     conversations: {}
   };
@@ -1828,6 +1893,85 @@ async function copySessionToClipboard() {
   } catch (_) {
     showToast('Copy failed — try exporting instead');
   }
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+
+async function shareSession() {
+  const data = { memory: S.memory, conversations: {} };
+  ALL_KEYS.forEach(key => {
+    const hist = S.histories[key];
+    if (hist && hist.length) {
+      const name = key === 'ollama' ? `Ollama (${S.ollamaModel})` : AIS[key].name;
+      data.conversations[name] = hist;
+    }
+  });
+  const json = JSON.stringify(data);
+  let compressed;
+  try {
+    compressed = LZString.compressToEncodedURIComponent(json);
+  } catch (_) {
+    showToast('Share failed — lz-string not loaded');
+    return;
+  }
+  if (compressed.length > 8000) {
+    showToast('Session too long to share via link. Try exporting as markdown instead.');
+    return;
+  }
+  const url = `${location.origin}/dashboard/#shared=${compressed}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Share link copied!');
+  } catch (_) {
+    // Fallback: show URL in a prompt
+    prompt('Copy this share link:', url);
+  }
+}
+
+function loadSharedSession() {
+  const hash = location.hash;
+  if (!hash.startsWith('#shared=')) return false;
+  const compressed = hash.slice('#shared='.length);
+  let data;
+  try {
+    const json = LZString.decompressFromEncodedURIComponent(compressed);
+    data = JSON.parse(json);
+  } catch (_) {
+    return false;
+  }
+  if (!data || !data.conversations) return false;
+
+  // Enter read-only shared mode
+  DEMO_MODE = true; // Disable sending
+  CLOUD_KEYS.forEach(key => {
+    S.modes[key] = 'api';
+    S.apiKeys[key] = 'shared-placeholder';
+    S.histories[key] = [];
+    S.loading[key] = false; S.unread[key] = 0;
+  });
+  S.memory = data.memory || '';
+
+  // Restore histories from shared data
+  Object.entries(data.conversations).forEach(([name, hist]) => {
+    const key = Object.entries(AIS).find(([k, v]) => v.name === name || `Ollama (${S.ollamaModel})` === name)?.[0];
+    if (key) S.histories[key] = hist;
+  });
+
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'flex';
+  document.getElementById('sharedBanner').style.display = 'flex';
+
+  S.activeTab = visibleKeys()[0] || null;
+  buildPanels(); bindMain(); setView(S.view);
+
+  // Hide all input areas in read-only mode
+  document.querySelectorAll('.chat-input-row').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.chat-textarea').forEach(el => el.disabled = true);
+  document.getElementById('broadcastInput').disabled = true;
+  document.getElementById('broadcastBtn').style.display = 'none';
+  document.getElementById('shareBtn').style.display = 'none';
+
+  return true;
 }
 
 // ── Demo Functions ────────────────────────────────────────────────────────────
@@ -1980,6 +2124,8 @@ function bindMain() {
     document.getElementById('conflictBanner').style.display = 'none';
   });
   document.getElementById('settingsBtn').addEventListener('click', goToSettings);
+  document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+  document.getElementById('shareBtn')?.addEventListener('click', shareSession);
   document.getElementById('shortcutsBtn').addEventListener('click', () => {
     document.getElementById('shortcutsModal').style.display = 'flex';
   });
@@ -2034,17 +2180,27 @@ function bindKeyboardShortcuts() {
     // D — toggle debate bar
     if (e.key === 'd' || e.key === 'D') { document.getElementById('debateBtn')?.click(); }
 
-    // 1, 2, 3, 4 — switch view
+    // 1, 2, 3, 4 — switch view (with or without Ctrl/Cmd)
+    if (['1','2','3','4'].includes(e.key) && (e.ctrlKey || e.metaKey)) { setView(parseInt(e.key)); e.preventDefault(); return; }
     if (['1','2','3','4'].includes(e.key)) { setView(parseInt(e.key)); }
 
-    // Ctrl+Enter — send broadcast
+    // Ctrl+Enter — send from active panel (or broadcast if broadcast is focused)
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      const bi = document.getElementById('broadcastInput');
-      if (bi && bi.value.trim()) { document.getElementById('broadcastBtn')?.click(); e.preventDefault(); }
+      const focused = document.activeElement;
+      if (focused && focused.id && focused.id.startsWith('ct-')) {
+        // A panel textarea is focused — send that panel
+        const pKey = focused.id.replace('ct-', '');
+        if (pKey) { e.preventDefault(); send(pKey); return; }
+      }
+      // Otherwise send the active panel
+      if (S.activeTab) { e.preventDefault(); send(S.activeTab); return; }
     }
 
     // Ctrl+E — export session
     if (e.key === 'e' && (e.ctrlKey || e.metaKey)) { exportSession?.(); e.preventDefault(); }
+
+    // Ctrl+Shift+C — copy full conversation
+    if (e.key === 'C' && (e.ctrlKey || e.metaKey) && e.shiftKey) { copySessionToClipboard?.(); e.preventDefault(); }
   });
 
   document.getElementById('shortcutsClose')?.addEventListener('click', () => {
@@ -2170,9 +2326,96 @@ async function generateSessionTitle() {
   } catch (_) {}
 }
 
+// ── Template Params ───────────────────────────────────────────────────────────
+
+const TEMPLATE_CONFIGS = {
+  'architecture-review': {
+    systemPrompt: 'You are a senior software architect. Review the described system design and provide: 1) Key strengths, 2) Potential risks or weaknesses, 3) Specific, actionable recommendations for improvement. Be direct and technical.',
+    initialMessage: 'Please review this architecture and share your perspective:',
+  },
+  'code-review': {
+    systemPrompt: 'You are a senior software engineer doing a thorough code review. Check for: bugs, security vulnerabilities, performance issues, readability, and adherence to best practices. Be specific — point to exact problems and suggest fixes.',
+    initialMessage: 'Please review this code:',
+  },
+  'framework-debate': {
+    systemPrompt: 'You are a pragmatic engineering leader. When presented with a technology decision, argue for the option you genuinely believe is best for the described use case. Be opinionated, cite tradeoffs, and make a clear recommendation.',
+    initialMessage: 'Help me decide: which framework or technology should I use for this use case?',
+  },
+  'product-strategy': {
+    systemPrompt: 'You are a product strategist with experience across multiple successful products. Provide honest, critical feedback on product direction. Challenge assumptions. Identify risks the user may not have considered.',
+    initialMessage: 'What do you think of this product direction?',
+  },
+  'startup-validator': {
+    systemPrompt: "You are a skeptical but constructive investor reviewing startup ideas. Play devil's advocate — find the weaknesses, challenge assumptions, identify the hardest problems. End with what would need to be true for this to work.",
+    initialMessage: "Here's my startup idea — stress-test it:",
+  },
+  'content-writer': {
+    systemPrompt: 'You are a skilled content writer. Write clearly, engagingly, and in a voice that fits the described audience. When given a topic or brief, produce a complete draft — not an outline.',
+    initialMessage: 'Please write content about:',
+  },
+  'interview-prep': {
+    systemPrompt: 'You are a tough but fair interviewer. Ask challenging questions relevant to the role described. After the user answers, give specific, constructive feedback on their response.',
+    initialMessage: 'I am preparing for an interview. Please ask me questions for this role:',
+  },
+  'learning-plan': {
+    systemPrompt: 'You are an experienced educator and learning coach. When given a topic and skill level, create a structured, realistic learning plan with resources, milestones, and practice exercises.',
+    initialMessage: 'Create a learning plan for me to master:',
+  },
+};
+
+function applyTemplateParam() {
+  const params = new URLSearchParams(location.search);
+  const tpl = params.get('template');
+  if (!tpl || !TEMPLATE_CONFIGS[tpl]) return;
+  const config = TEMPLATE_CONFIGS[tpl];
+
+  // Set system prompt as memory for all panels
+  if (config.systemPrompt) {
+    S.memory = config.systemPrompt;
+    const mt = document.getElementById('memText');
+    if (mt) mt.value = S.memory;
+  }
+
+  // Pre-fill broadcast input with initial message
+  if (config.initialMessage) {
+    const bi = document.getElementById('broadcastInput');
+    if (bi) { bi.value = config.initialMessage; bi.focus(); }
+  }
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = theme === 'light' ? '☾' : '☀';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  try { localStorage.setItem('aihub_theme', next); } catch (_) {}
+  applyTheme(next);
+}
+
+function initTheme() {
+  let saved = 'dark';
+  try { saved = localStorage.getItem('aihub_theme') || 'dark'; } catch (_) {}
+  applyTheme(saved);
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  // Check for shared session in URL hash
+  if (location.hash.startsWith('#shared=')) {
+    if (loadSharedSession()) return;
+  }
   const d = store.get(['view', 'modes', 'memLabel', 'ollamaOn', 'ollamaModel']);
   if (d.view) S.view = d.view;
   buildSetup({ modes: d.modes, memoryLabel: d.memLabel, ollamaOn: d.ollamaOn, ollamaModel: d.ollamaModel });

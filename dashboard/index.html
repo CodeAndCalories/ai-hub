@@ -73,6 +73,12 @@
 <!-- MAIN SCREEN -->
 <div id="mainScreen" style="display:none;">
 
+  <!-- Shared session banner — shown when viewing a shared link -->
+  <div class="shared-banner" id="sharedBanner" style="display:none;">
+    <span>👁 Shared session — read only</span>
+    <a href="/dashboard/" class="shared-cta">Start your own →</a>
+  </div>
+
   <!-- Demo banner — hidden until demo mode is activated -->
   <div class="demo-banner" id="demoBanner" style="display:none;">
     <span>⚡ Demo mode — responses are simulated</span>
@@ -99,6 +105,7 @@
       <button class="tb-btn" id="promptsBtn">prompts</button>
       <button class="tb-btn" id="memBtn">memory</button>
       <button class="tb-btn" id="padBtn">pad</button>
+      <button class="tb-btn share-btn" id="shareBtn" title="Share session link">↗ share</button>
       <div class="export-wrap" id="exportWrap">
         <button class="tb-btn" id="exportBtn">export ▾</button>
         <div class="export-dropdown" id="exportDropdown" style="display:none;">
@@ -108,7 +115,8 @@
         </div>
       </div>
       <button class="tb-btn" id="workflowsBtn">workflows</button>
-      <button class="tb-btn" id="shortcutsBtn" title="Keyboard shortcuts (?)">?</button>
+      <button class="tb-btn" id="shortcutsBtn" title="Keyboard shortcuts">⌨</button>
+      <button class="tb-btn" id="themeToggleBtn" title="Toggle light/dark theme">☀</button>
       <button class="tb-btn settings" id="settingsBtn">⚙ settings</button>
     </div>
   </div>
@@ -257,16 +265,22 @@
   <!-- PROMPTS DRAWER -->
   <div class="drawer" id="promptsDrawer" style="display:none;">
     <div class="drawer-top">
-      <span>prompt library</span>
+      <span>📚 prompt library</span>
       <div class="drawer-acts">
         <button class="db-btn" id="closePromptsBtn">✕</button>
       </div>
     </div>
+    <div class="prompt-search-row">
+      <input type="text" id="promptSearchInput" class="tpl-name-input" placeholder="Search prompts..."/>
+    </div>
     <div class="prompt-save-row">
       <input type="text" id="promptNameInput" class="tpl-name-input" placeholder="prompt name..."/>
-      <button class="db-btn" id="savePromptBtn">save broadcast as prompt</button>
+      <button class="db-btn" id="savePromptBtn">+ save broadcast</button>
     </div>
+    <div class="prompt-section-label">My Prompts</div>
     <div class="prompt-list" id="promptList"></div>
+    <div class="prompt-section-label">Community Prompts</div>
+    <div class="prompt-list" id="communityPromptList"></div>
   </div>
 
 </div>
@@ -281,15 +295,23 @@
       <button class="shortcuts-close" id="shortcutsClose">✕</button>
     </div>
     <div class="shortcuts-list">
-      <div class="shortcut-row"><kbd>B</kbd><span>Focus broadcast</span></div>
-      <div class="shortcut-row"><kbd>M</kbd><span>Toggle memory</span></div>
-      <div class="shortcut-row"><kbd>P</kbd><span>Prompt library</span></div>
-      <div class="shortcut-row"><kbd>D</kbd><span>Debate mode</span></div>
-      <div class="shortcut-row"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span>Switch layout</span></div>
-      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>Enter</kbd><span>Send broadcast</span></div>
-      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>E</kbd><span>Export session</span></div>
-      <div class="shortcut-row"><kbd>Esc</kbd><span>Close drawers</span></div>
-      <div class="shortcut-row"><kbd>?</kbd><span>Show this help</span></div>
+      <div class="shortcut-section">Sending</div>
+      <div class="shortcut-row"><kbd>Cmd/Ctrl</kbd><kbd>Enter</kbd><span>Send from active panel</span></div>
+      <div class="shortcut-row"><kbd>Enter</kbd><span>Send broadcast / panel message</span></div>
+      <div class="shortcut-section">Navigation</div>
+      <div class="shortcut-row"><kbd>Cmd/Ctrl</kbd><kbd>1–4</kbd><span>Switch panel layout</span></div>
+      <div class="shortcut-row"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span>Switch layout (quick)</span></div>
+      <div class="shortcut-row"><kbd>B</kbd><span>Focus broadcast input</span></div>
+      <div class="shortcut-section">Tools</div>
+      <div class="shortcut-row"><kbd>M</kbd><span>Toggle memory drawer</span></div>
+      <div class="shortcut-row"><kbd>P</kbd><span>Toggle prompt library</span></div>
+      <div class="shortcut-row"><kbd>D</kbd><span>Toggle debate mode</span></div>
+      <div class="shortcut-section">Export</div>
+      <div class="shortcut-row"><kbd>Cmd/Ctrl</kbd><kbd>E</kbd><span>Export as Markdown</span></div>
+      <div class="shortcut-row"><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd><span>Copy full conversation</span></div>
+      <div class="shortcut-section">General</div>
+      <div class="shortcut-row"><kbd>Esc</kbd><span>Close drawers / modals</span></div>
+      <div class="shortcut-row"><kbd>⌨</kbd><span>Show this cheat sheet</span></div>
     </div>
   </div>
 </div>
@@ -311,6 +333,7 @@
   <div class="workflows-list" id="workflowsList"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="memstore.js"></script>

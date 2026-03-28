@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0e0e0e"/>
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="#181818" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="#181818" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="#181818" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="#181818" stroke-width="1"/>
+  <!-- AI model dots -->
+  <circle cx="300" cy="200" r="60" fill="#10a37f" opacity="0.15"/>
+  <circle cx="500" cy="200" r="60" fill="#cc785c" opacity="0.15"/>
+  <circle cx="700" cy="200" r="60" fill="#4285f4" opacity="0.15"/>
+  <circle cx="900" cy="200" r="60" fill="#1d9bf0" opacity="0.15"/>
+  <circle cx="300" cy="200" r="8" fill="#10a37f"/>
+  <circle cx="500" cy="200" r="8" fill="#cc785c"/>
+  <circle cx="700" cy="200" r="8" fill="#4285f4"/>
+  <circle cx="900" cy="200" r="8" fill="#1d9bf0"/>
+  <!-- Connection lines -->
+  <line x1="300" y1="200" x2="500" y2="200" stroke="#2e2e2e" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="500" y1="200" x2="700" y2="200" stroke="#2e2e2e" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="700" y1="200" x2="900" y2="200" stroke="#2e2e2e" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <!-- Logo -->
+  <text x="600" y="340" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="72" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="-2">AI Hub</text>
+  <!-- Tagline -->
+  <text x="600" y="400" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" fill="#555555" text-anchor="middle">Chat with every AI at the same time</text>
+  <!-- Model labels -->
+  <text x="300" y="285" font-family="monospace" font-size="13" fill="#10a37f" text-anchor="middle">ChatGPT</text>
+  <text x="500" y="285" font-family="monospace" font-size="13" fill="#cc785c" text-anchor="middle">Claude</text>
+  <text x="700" y="285" font-family="monospace" font-size="13" fill="#4285f4" text-anchor="middle">Gemini</text>
+  <text x="900" y="285" font-family="monospace" font-size="13" fill="#1d9bf0" text-anchor="middle">Grok</text>
+  <!-- URL -->
+  <text x="600" y="570" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" fill="#333333" text-anchor="middle">aihubdash.com</text>
+</svg>
