@@ -731,3 +731,72 @@ kbd { display: inline-flex; align-items: center; justify-content: center; backgr
 .qp-label { font-size: 10px; color: #2a2a2a; margin-bottom: 8px; }
 .qp-chip { display: inline-block; margin: 3px; font-size: 11px; padding: 4px 10px; background: #111; border: 1px solid #1e1e1e; border-radius: 12px; color: #3a3a3a; cursor: pointer; transition: all 0.12s; font-family: inherit; }
 .qp-chip:hover { border-color: #333; color: #777; background: #161616; }
+
+/* ── EXPORT DROPDOWN ─────────────────────────────────────────── */
+.export-wrap { position: relative; }
+.export-dropdown {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: #1a1a1a; border: 1px solid #2e2e2e; border-radius: 7px;
+  min-width: 180px; z-index: 200; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.export-dropdown button {
+  display: block; width: 100%; text-align: left;
+  padding: 9px 14px; font-size: 12px; color: #bbb;
+  background: none; border: none; cursor: pointer;
+  transition: background 0.1s; font-family: inherit;
+}
+.export-dropdown button:hover { background: #222; color: #fff; }
+.export-dropdown button + button { border-top: 1px solid #222; }
+
+/* ── PLAN MODE ───────────────────────────────────────────────── */
+.plan-btn { color: #a0c4ff; }
+.plan-btn:hover { color: #c8d9ff; }
+.plan-bar {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: #0d1520; border-bottom: 1px solid #1a2535;
+  flex-wrap: wrap;
+}
+.plan-bar-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.plan-label { font-size: 12px; font-weight: 600; color: #a0c4ff; white-space: nowrap; }
+.plan-templates { display: flex; gap: 4px; flex-wrap: wrap; }
+.plan-tpl-btn {
+  font-size: 10px; padding: 3px 9px; border-radius: 12px;
+  background: #111; border: 1px solid #1e2a3a; color: #5577aa;
+  cursor: pointer; transition: all 0.12s; font-family: inherit;
+}
+.plan-tpl-btn:hover { border-color: #2a4060; color: #88aacc; }
+.plan-tpl-btn.active { border-color: #3a6090; color: #a0c4ff; background: #0d1e30; }
+.plan-bar input {
+  flex: 1; background: #0a1525; border: 1px solid #1e2a3a; border-radius: 5px;
+  padding: 6px 10px; color: #ccc; font-size: 12px; outline: none; min-width: 160px;
+  font-family: inherit;
+}
+.plan-bar input:focus { border-color: #3a6090; }
+.plan-bar input::placeholder { color: #334455; }
+.plan-bar button#planStartBtn {
+  background: #1a3a60; border: 1px solid #2a5090; color: #88aadd;
+  border-radius: 5px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  transition: all 0.12s; font-family: inherit; white-space: nowrap;
+}
+.plan-bar button#planStartBtn:hover { background: #2a4a70; color: #aaccee; }
+
+/* ── OLLAMA DETECT BANNER ────────────────────────────────────── */
+.ollama-detect-banner {
+  display: flex; align-items: center; gap: 12px;
+  background: #0f1a0f; border-bottom: 1px solid #1a3020;
+  padding: 10px 16px; font-size: 13px; color: #6ab87a;
+  position: sticky; top: 0; z-index: 100;
+}
+.ollama-detect-banner span { flex: 1; }
+.ollama-detect-banner button {
+  background: #1a3020; border: 1px solid #2a4030; border-radius: 5px;
+  color: #7acc8a; padding: 4px 12px; font-size: 12px;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.ollama-detect-banner button:hover { background: #223a28; }
+.ollama-detect-dismiss {
+  background: none !important; border: none !important;
+  color: #3a5a3a !important; padding: 4px 6px !important;
+  font-size: 14px !important;
+}
