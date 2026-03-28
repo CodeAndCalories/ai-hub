@@ -212,7 +212,8 @@ function buildSetup(prefill) {
         <span class="sname">${ai.name}</span>
         <div class="mode-switch">
           <button class="ms-btn ${mode==='api'?'active':''}" data-key="${key}" data-mode="api">API</button>
-          <button class="ms-btn ${mode==='native'?'active':''}" data-key="${key}" data-mode="native">Native</button>
+          <!-- Native mode hidden - may re-enable later -->
+          <button class="ms-btn ${mode==='native'?'active':''}" data-key="${key}" data-mode="native" style="display:none">Native</button>
           <button class="ms-btn ${mode==='off'?'active':''}" data-key="${key}" data-mode="off">Off</button>
         </div>
       </div>
