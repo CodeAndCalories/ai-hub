@@ -138,10 +138,35 @@ const S = {
   relayOn:     false,
   personas:    {},
   zoomed:      null,
-  sessionTitle: ''
+  sessionTitle: '',
+  branches:    {}, // key → [{ id, name, messages, currentBranch }]
+  activeBranch: {} // key → branchIndex (-1 = main)
 };
 
 const responseTimes = {};
+
+// ── Analytics State ───────────────────────────────────────────────────────────
+const SESSION_START = Date.now();
+const sessionStats = {
+  messages: {},      // key → count this session
+  responseTimes: {}, // key → [ms, ...]
+  wordCounts: {},    // key → total words
+  charCounts: {},    // key → total chars
+};
+// Load cumulative stats from localStorage
+let cumulativeStats = {};
+try { cumulativeStats = JSON.parse(localStorage.getItem('aihub_stats') || '{}'); } catch(_) {}
+
+// ── Pin Storage ───────────────────────────────────────────────────────────────
+// Load persisted pins on startup
+try {
+  const savedPins = JSON.parse(localStorage.getItem('aihub_pins') || '{}');
+  Object.assign(pinnedMessages, savedPins);
+} catch(_) {}
+
+// ── Branch State ──────────────────────────────────────────────────────────────
+// S.branches is defined after S, set it here
+// branches[key] = [{ id, name, messages, fromIndex, createdAt }]
 
 const sendableKeys = () => ALL_KEYS.filter(k => {
   if (S.modes[k] === 'off' || S.modes[k] === 'native') return false;
@@ -603,7 +628,8 @@ async function send(key, textOverride, isRelay) {
         ? await AIS.ollama.call(null, S.histories[key], sys, S.ollamaModel)
         : await AIS[key].call(apiKey, S.histories[key], sys);
     }
-    const elapsed = ((Date.now() - responseTimes[key]) / 1000).toFixed(1) + 's';
+    const elapsedMs = Date.now() - responseTimes[key];
+    const elapsed = (elapsedMs / 1000).toFixed(1) + 's';
     removeEl(tid);
     S.histories[key].push({ role: 'assistant', content: reply });
     addBubble(key, 'assistant', reply, null, elapsed);
@@ -614,6 +640,11 @@ async function send(key, textOverride, isRelay) {
     // Memstore auto-save — fire-and-forget
     const aiName = key.startsWith('ollama') ? `Ollama` : (AIS[key]?.name || key);
     Memstore.rememberResponse(aiName, text, reply);
+    // Track analytics
+    trackStats(key, elapsedMs, reply);
+    // Cross-tab sync: broadcast user message + reply
+    broadcastToTabs({ type: 'msg', key, role: 'user', text });
+    broadcastToTabs({ type: 'msg', key, role: 'assistant', text: reply });
   } catch (err) {
     removeEl(tid);
     addBubble(key, 'assistant', '⚠ ' + err.message);
@@ -767,7 +798,14 @@ function addBubble(key, role, text, images, elapsed) {
     const pinBtn = document.createElement('button');
     pinBtn.className = 'ma-btn pin-btn'; pinBtn.textContent = '📌 pin';
     pinBtn.onclick = () => pinMessage(key, text, pinBtn);
-    acts.appendChild(copyBtn); acts.appendChild(padBtn); acts.appendChild(shareBtn); acts.appendChild(pinBtn);
+    const branchBtn = document.createElement('button');
+    branchBtn.className = 'branch-btn'; branchBtn.textContent = '⑂ branch';
+    branchBtn.title = 'Branch conversation from here';
+    branchBtn.onclick = () => {
+      const msgIndex = S.histories[key].findIndex(m => m.role === 'assistant' && m.content === text);
+      createBranch(key, msgIndex >= 0 ? msgIndex : S.histories[key].length - 1);
+    };
+    acts.appendChild(copyBtn); acts.appendChild(padBtn); acts.appendChild(shareBtn); acts.appendChild(pinBtn); acts.appendChild(branchBtn);
     wrap.appendChild(acts);
 
     if (elapsed) {
@@ -786,10 +824,15 @@ function pinMessage(key, text, btn) {
   if (!pinnedMessages[key]) pinnedMessages[key] = [];
   // Prevent duplicate pins
   if (pinnedMessages[key].some(p => p.text === text)) { showToast('Already pinned'); return; }
-  pinnedMessages[key].push({ text });
+  pinnedMessages[key].push({ text, key, ts: Date.now() });
   if (btn) { btn.textContent = '📌 pinned'; btn.disabled = true; }
   renderPinnedSection(key);
+  savePins();
   showToast('Pinned ✓');
+}
+
+function savePins() {
+  try { localStorage.setItem('aihub_pins', JSON.stringify(pinnedMessages)); } catch(_) {}
 }
 
 function renderPinnedSection(key) {
@@ -819,6 +862,7 @@ function renderPinnedSection(key) {
     item.querySelector('.pinned-rm').addEventListener('click', () => {
       pinnedMessages[key].splice(i, 1);
       renderPinnedSection(key);
+      savePins();
     });
     list.appendChild(item);
   });
@@ -2108,6 +2152,11 @@ function bindMain() {
   loadPrompts();
   bindKeyboardShortcuts();
   bindWorkflows();
+  bindAnalytics();
+  bindSearch();
+  bindPinnedDrawer();
+  initSyncChannel();
+  checkOnboarding();
   // Export dropdown
   const exportBtn      = document.getElementById('exportBtn');
   const exportDropdown = document.getElementById('exportDropdown');
@@ -2146,9 +2195,13 @@ function bindKeyboardShortcuts() {
 
     // Escape — close any open drawer or modal
     if (e.key === 'Escape') {
+      const searchOverlay = document.getElementById('searchOverlay');
+      if (searchOverlay && searchOverlay.style.display !== 'none') { searchOverlay.style.display = 'none'; return; }
+      const analyticsModal = document.getElementById('analyticsModal');
+      if (analyticsModal && analyticsModal.style.display !== 'none') { analyticsModal.style.display = 'none'; return; }
       if (modal && modal.style.display !== 'none') { modal.style.display = 'none'; return; }
       document.getElementById('exportDropdown').style.display = 'none';
-      ['memDrawer','padDrawer','tplPanel','debateBar','brainstormBar','planBar','planSynthesisBar','promptsDrawer','workflowsDrawer'].forEach(id => {
+      ['memDrawer','padDrawer','tplPanel','debateBar','brainstormBar','planBar','planSynthesisBar','promptsDrawer','workflowsDrawer','pinnedDrawer'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.style.display !== 'none') el.style.display = 'none';
       });
@@ -2196,6 +2249,9 @@ function bindKeyboardShortcuts() {
       // Otherwise send the active panel
       if (S.activeTab) { e.preventDefault(); send(S.activeTab); return; }
     }
+
+    // Ctrl+F — search conversations
+    if (e.key === 'f' && (e.ctrlKey || e.metaKey)) { openSearch(); e.preventDefault(); return; }
 
     // Ctrl+E — export session
     if (e.key === 'e' && (e.ctrlKey || e.metaKey)) { exportSession?.(); e.preventDefault(); }
@@ -2453,4 +2509,477 @@ async function detectOllamaOnLoad(alreadyOn) {
   } catch (_) {
     // Ollama not running — do nothing silently
   }
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+const COST_TABLE = {
+  chatgpt: { input: 0.03/1000, output: 0.06/1000 },
+  claude:  { input: 0.015/1000, output: 0.075/1000 },
+  gemini:  { input: 0.0005/1000, output: 0.0005/1000 },
+  grok:    { input: 0.03/1000, output: 0.06/1000 },
+  ollama:  { input: 0, output: 0 },
+};
+
+function trackStats(key, elapsedMs, reply) {
+  if (!sessionStats.messages[key]) sessionStats.messages[key] = 0;
+  sessionStats.messages[key]++;
+  if (!sessionStats.responseTimes[key]) sessionStats.responseTimes[key] = [];
+  sessionStats.responseTimes[key].push(elapsedMs);
+  const words = reply.split(/\s+/).filter(Boolean).length;
+  const chars = reply.length;
+  if (!sessionStats.wordCounts[key]) sessionStats.wordCounts[key] = 0;
+  sessionStats.wordCounts[key] += words;
+  if (!sessionStats.charCounts[key]) sessionStats.charCounts[key] = 0;
+  sessionStats.charCounts[key] += chars;
+  // Cumulative
+  if (!cumulativeStats[key]) cumulativeStats[key] = { messages: 0, words: 0, chars: 0 };
+  cumulativeStats[key].messages++;
+  cumulativeStats[key].words = (cumulativeStats[key].words || 0) + words;
+  cumulativeStats[key].chars = (cumulativeStats[key].chars || 0) + chars;
+  try { localStorage.setItem('aihub_stats', JSON.stringify(cumulativeStats)); } catch(_) {}
+}
+
+function bindAnalytics() {
+  document.getElementById('analyticsBtn')?.addEventListener('click', () => {
+    document.getElementById('analyticsModal').style.display = 'flex';
+    renderAnalytics();
+  });
+  document.getElementById('analyticsClose')?.addEventListener('click', () => {
+    document.getElementById('analyticsModal').style.display = 'none';
+  });
+  document.getElementById('analyticsModal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('analyticsModal')) {
+      document.getElementById('analyticsModal').style.display = 'none';
+    }
+  });
+}
+
+function renderAnalytics() {
+  const el = document.getElementById('analyticsContent');
+  if (!el) return;
+
+  const elapsed = Date.now() - SESSION_START;
+  const mins = Math.floor(elapsed / 60000);
+  const secs = Math.floor((elapsed % 60000) / 1000);
+  const totalMsgs = Object.values(sessionStats.messages).reduce((a,b)=>a+b,0);
+  const entries = Object.entries(sessionStats.messages);
+  const mostActive = entries.length ? entries.sort((a,b)=>b[1]-a[1])[0] : null;
+
+  const maxMsgs = Math.max(...Object.values(sessionStats.messages), 1);
+
+  let rows = '';
+  ALL_KEYS.forEach(key => {
+    if (S.modes[key] === 'off') return;
+    const ai = AIS[key];
+    const msgs = sessionStats.messages[key] || 0;
+    const times = sessionStats.responseTimes[key] || [];
+    const avgTime = times.length ? (times.reduce((a,b)=>a+b,0)/times.length/1000).toFixed(1) : '—';
+    const words = sessionStats.wordCounts[key] || 0;
+    const chars = sessionStats.charCounts[key] || 0;
+    const cost = COST_TABLE[key] || COST_TABLE.chatgpt;
+    const inputTokens = (S.histories[key] || []).filter(m=>m.role==='user').reduce((a,m)=>a+m.content.length/4,0);
+    const outputTokens = chars / 4;
+    const estimatedCost = key === 'ollama' ? '0.0000' : (inputTokens*cost.input + outputTokens*cost.output).toFixed(4);
+    const barPct = Math.round((msgs / maxMsgs) * 100);
+    rows += `<div class="analytics-model-row">
+      <div class="analytics-model-name" style="color:${ai.color}">${ai.name}</div>
+      <div class="analytics-bar-wrap"><div class="analytics-bar" style="width:${barPct}%;background:${ai.color}"></div></div>
+      <div class="analytics-model-stats">
+        <span>${msgs} msg</span>
+        <span>${avgTime}s avg</span>
+        <span>${words} words</span>
+        <span class="analytics-cost">~$${estimatedCost}</span>
+      </div>
+    </div>`;
+  });
+
+  const totalCost = ALL_KEYS.reduce((total, key) => {
+    if (S.modes[key]==='off') return total;
+    const chars = sessionStats.charCounts[key] || 0;
+    const cost = COST_TABLE[key] || COST_TABLE.chatgpt;
+    if (key === 'ollama') return total;
+    const inputTokens = (S.histories[key]||[]).filter(m=>m.role==='user').reduce((a,m)=>a+m.content.length/4,0);
+    return total + (inputTokens*cost.input + (chars/4)*cost.output);
+  }, 0);
+
+  el.innerHTML = `
+    <div class="analytics-session">
+      <div class="analytics-stat-box">
+        <div class="analytics-stat-val">${mins}m ${secs}s</div>
+        <div class="analytics-stat-lbl">duration</div>
+      </div>
+      <div class="analytics-stat-box">
+        <div class="analytics-stat-val">${totalMsgs}</div>
+        <div class="analytics-stat-lbl">messages</div>
+      </div>
+      <div class="analytics-stat-box">
+        <div class="analytics-stat-val">${mostActive ? AIS[mostActive[0]]?.name : '—'}</div>
+        <div class="analytics-stat-lbl">most active</div>
+      </div>
+    </div>
+    <div class="analytics-section-title">Per-model · this session</div>
+    <div class="analytics-models">${rows || '<p style="font-size:12px;color:#444;text-align:center;padding:16px 0">No messages yet</p>'}</div>
+    <div class="analytics-total-cost"><span>Estimated session cost</span><strong>~$${totalCost.toFixed(4)}</strong></div>
+    <div class="analytics-reset-row"><button class="analytics-reset-btn" id="analyticsResetBtn">Reset cumulative stats</button></div>`;
+
+  document.getElementById('analyticsResetBtn')?.addEventListener('click', () => {
+    cumulativeStats = {};
+    try { localStorage.removeItem('aihub_stats'); } catch(_) {}
+    showToast('Stats reset');
+    renderAnalytics();
+  });
+}
+
+// ── Cross-Tab Sync (BroadcastChannel) ────────────────────────────────────────
+
+let syncChannel = null;
+let connectedTabs = 0;
+const MY_TAB_ID = Math.random().toString(36).slice(2);
+
+function initSyncChannel() {
+  if (!('BroadcastChannel' in window)) return;
+  syncChannel = new BroadcastChannel('aihub-sync');
+  syncChannel.postMessage({ type: 'tab-open', from: MY_TAB_ID });
+
+  syncChannel.addEventListener('message', e => {
+    const { type, from, key, role, text } = e.data;
+    if (!from || from === MY_TAB_ID) return; // ignore own messages
+
+    if (type === 'tab-open') {
+      connectedTabs = Math.max(1, connectedTabs + 1);
+      syncChannel.postMessage({ type: 'tab-announce', from: MY_TAB_ID });
+      updateTabIndicator();
+    } else if (type === 'tab-announce') {
+      connectedTabs = Math.max(1, connectedTabs + 1);
+      updateTabIndicator();
+    } else if (type === 'tab-close') {
+      connectedTabs = Math.max(0, connectedTabs - 1);
+      updateTabIndicator();
+    } else if (type === 'msg') {
+      // Show synced message in our panels
+      const mainVisible = document.getElementById('mainScreen')?.style.display !== 'none';
+      if (mainVisible && S.modes[key] !== 'off' && S.modes[key] !== 'native') {
+        document.getElementById('es-' + key)?.remove();
+        addBubble(key, role, text);
+      }
+    }
+  });
+
+  window.addEventListener('beforeunload', () => {
+    syncChannel?.postMessage({ type: 'tab-close', from: MY_TAB_ID });
+  });
+}
+
+function broadcastToTabs(msg) {
+  syncChannel?.postMessage({ ...msg, from: MY_TAB_ID });
+}
+
+function updateTabIndicator() {
+  const indicator = document.getElementById('tabSyncIndicator');
+  if (!indicator) return;
+  if (connectedTabs > 0) {
+    indicator.textContent = `${connectedTabs + 1} tabs`;
+    indicator.style.display = 'inline-block';
+  } else {
+    indicator.style.display = 'none';
+  }
+}
+
+// ── Conversation Search ───────────────────────────────────────────────────────
+
+function openSearch() {
+  const overlay = document.getElementById('searchOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  const input = document.getElementById('searchInput');
+  if (input) { input.value = ''; input.focus(); }
+  document.getElementById('searchResults').innerHTML = '';
+}
+
+function bindSearch() {
+  document.getElementById('searchBtn')?.addEventListener('click', openSearch);
+  document.getElementById('searchOverlay')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('searchOverlay')) {
+      document.getElementById('searchOverlay').style.display = 'none';
+    }
+  });
+  const input = document.getElementById('searchInput');
+  if (input) {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { document.getElementById('searchOverlay').style.display = 'none'; }
+    });
+    input.addEventListener('input', () => runSearch(input.value));
+  }
+}
+
+function runSearch(query) {
+  const container = document.getElementById('searchResults');
+  if (!container) return;
+  const q = query.trim().toLowerCase();
+  if (!q) { container.innerHTML = ''; return; }
+
+  const results = [];
+  ALL_KEYS.forEach(key => {
+    if (S.modes[key] === 'off') return;
+    const ai = AIS[key];
+    (S.histories[key] || []).forEach((msg, idx) => {
+      const content = msg.content || '';
+      if (content.toLowerCase().includes(q)) {
+        results.push({ key, ai, role: msg.role, content, idx });
+      }
+    });
+  });
+
+  if (!results.length) {
+    container.innerHTML = '<div class="search-no-results">No results found</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  results.slice(0, 40).forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'search-result-item';
+    const lo = r.content.toLowerCase().indexOf(q);
+    const start = Math.max(0, lo - 40);
+    const end = Math.min(r.content.length, lo + q.length + 60);
+    const snippet = (start > 0 ? '…' : '') + r.content.slice(start, end) + (end < r.content.length ? '…' : '');
+    const escaped = snippet.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const highlighted = escaped.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi'), m => `<mark>${m}</mark>`);
+    item.innerHTML = `<div class="search-result-panel" style="color:${r.ai.color}">${r.ai.name} · ${r.role}</div><div class="search-result-text">${highlighted}</div>`;
+    item.addEventListener('click', () => {
+      document.getElementById('searchOverlay').style.display = 'none';
+      scrollToMessage(r.key, r.idx);
+    });
+    container.appendChild(item);
+  });
+}
+
+function scrollToMessage(key, msgIndex) {
+  // Make panel visible first
+  if (S.modes[key] === 'off') return;
+  const panel = document.getElementById('p-' + key);
+  if (!panel) return;
+  if (panel.classList.contains('hidden')) {
+    S.activeTab = key;
+    setView(S.view);
+  }
+  // Find the nth message in the chat
+  const cm = document.getElementById('cm-' + key);
+  if (!cm) return;
+  const msgs = cm.querySelectorAll('.msg');
+  const target = msgs[msgIndex];
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.style.outline = '1px solid var(--accent)';
+    setTimeout(() => { target.style.outline = ''; }, 1800);
+  }
+}
+
+// ── Conversation Branching ────────────────────────────────────────────────────
+
+function createBranch(key, msgIndex) {
+  if (!S.branches[key]) S.branches[key] = [];
+  if (!S.activeBranch[key]) S.activeBranch[key] = -1;
+
+  // Save current state as a branch
+  const branchCount = S.branches[key].length;
+  const branchName = `Branch ${branchCount + 1}`;
+
+  // Save full current history as a branch
+  S.branches[key].push({
+    id: Date.now().toString(36),
+    name: branchName,
+    messages: S.histories[key].slice(),
+    fromIndex: msgIndex,
+    createdAt: Date.now()
+  });
+
+  // If this is the first branch, also save the current state as "Main"
+  if (branchCount === 0) {
+    S.branches[key].unshift({
+      id: 'main',
+      name: 'Main',
+      messages: S.histories[key].slice(),
+      fromIndex: -1,
+      createdAt: Date.now()
+    });
+  }
+
+  // Truncate history to the branch point (keep messages 0..msgIndex)
+  S.histories[key] = S.histories[key].slice(0, msgIndex + 1);
+  S.activeBranch[key] = S.branches[key].length - 1;
+
+  // Re-render the chat panel
+  rebuildChatFromHistory(key);
+  renderBranchSelector(key);
+  showToast(`${branchName} created — ask a different follow-up`);
+}
+
+function rebuildChatFromHistory(key) {
+  const cm = document.getElementById('cm-' + key);
+  if (!cm) return;
+  cm.innerHTML = '';
+  const hist = S.histories[key];
+  if (!hist.length) {
+    const ai = AIS[key];
+    cm.innerHTML = `<div class="empty-state" id="es-${key}"><span class="en">${ai.name}</span><span class="eh">branched — ask a follow-up</span></div>`;
+    return;
+  }
+  hist.forEach(msg => {
+    addBubble(key, msg.role, msg.content);
+  });
+}
+
+function renderBranchSelector(key) {
+  if (!S.branches[key] || !S.branches[key].length) return;
+  const panel = document.getElementById('p-' + key);
+  if (!panel) return;
+
+  let selector = document.getElementById('branch-selector-' + key);
+  if (!selector) {
+    selector = document.createElement('div');
+    selector.className = 'branch-selector';
+    selector.id = 'branch-selector-' + key;
+    const ph = document.getElementById('ph-' + key);
+    if (ph) ph.after(selector);
+  }
+
+  selector.innerHTML = `<span class="branch-selector-label">branches</span>`;
+  S.branches[key].forEach((branch, i) => {
+    const pill = document.createElement('button');
+    pill.className = 'branch-pill' + (i === S.activeBranch[key] ? ' active' : '');
+    pill.textContent = branch.name;
+    pill.addEventListener('click', () => switchBranch(key, i));
+    selector.appendChild(pill);
+  });
+}
+
+function switchBranch(key, branchIndex) {
+  if (!S.branches[key] || !S.branches[key][branchIndex]) return;
+  S.activeBranch[key] = branchIndex;
+  S.histories[key] = S.branches[key][branchIndex].messages.slice();
+  rebuildChatFromHistory(key);
+  renderBranchSelector(key);
+  showToast(`Switched to ${S.branches[key][branchIndex].name}`);
+}
+
+// ── Global Pinned Drawer ──────────────────────────────────────────────────────
+
+function bindPinnedDrawer() {
+  document.getElementById('pinnedBtn')?.addEventListener('click', () => {
+    const drawer = document.getElementById('pinnedDrawer');
+    if (!drawer) return;
+    ['memDrawer','padDrawer','promptsDrawer','workflowsDrawer'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    const open = drawer.style.display !== 'none';
+    drawer.style.display = open ? 'none' : 'flex';
+    if (!open) { drawer.style.flexDirection = 'column'; renderGlobalPinned(); }
+  });
+  document.getElementById('closePinnedBtn')?.addEventListener('click', () => {
+    document.getElementById('pinnedDrawer').style.display = 'none';
+  });
+  document.getElementById('exportPinsBtn')?.addEventListener('click', exportPinsAsMarkdown);
+}
+
+function renderGlobalPinned() {
+  const list = document.getElementById('pinnedGlobalList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const allPins = [];
+  ALL_KEYS.forEach(key => {
+    (pinnedMessages[key] || []).forEach(pin => {
+      allPins.push({ ...pin, key });
+    });
+  });
+
+  allPins.sort((a,b) => (b.ts||0) - (a.ts||0));
+
+  if (!allPins.length) {
+    list.innerHTML = '<div class="pinned-empty">No pinned messages yet. Click 📌 on any AI response.</div>';
+    return;
+  }
+
+  allPins.forEach((pin, globalIdx) => {
+    const ai = AIS[pin.key];
+    const item = document.createElement('div');
+    item.className = 'pinned-global-item';
+    const ts = pin.ts ? new Date(pin.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+    item.innerHTML = `
+      <div class="pinned-global-meta">
+        <span class="pinned-global-panel" style="color:${ai?.color||'#888'}">${ai?.name || pin.key}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pinned-global-time">${ts}</span>
+          <button class="pinned-global-unpin" data-key="${pin.key}" data-idx="${globalIdx}">✕</button>
+        </div>
+      </div>
+      <div class="pinned-global-text">${(pin.text||'').slice(0,200)}${pin.text&&pin.text.length>200?'…':''}</div>`;
+    item.querySelector('.pinned-global-unpin').addEventListener('click', e => {
+      const k = e.target.dataset.key;
+      const text = pin.text;
+      if (pinnedMessages[k]) {
+        const idx = pinnedMessages[k].findIndex(p => p.text === text);
+        if (idx >= 0) { pinnedMessages[k].splice(idx, 1); savePins(); }
+      }
+      renderGlobalPinned();
+    });
+    list.appendChild(item);
+  });
+}
+
+function exportPinsAsMarkdown() {
+  const allPins = [];
+  ALL_KEYS.forEach(key => {
+    (pinnedMessages[key] || []).forEach(pin => {
+      allPins.push({ ...pin, key, aiName: AIS[key]?.name || key });
+    });
+  });
+  if (!allPins.length) { showToast('No pinned messages to export'); return; }
+
+  let md = `# AI Hub — Pinned Messages\nExported: ${new Date().toLocaleString()}\n\n`;
+  allPins.forEach(pin => {
+    const ts = pin.ts ? new Date(pin.ts).toLocaleString() : '';
+    md += `## [${pin.aiName}]${ts ? ` · ${ts}` : ''}\n\n${pin.text}\n\n---\n\n`;
+  });
+  md += `*Exported from [AI Hub](https://aihubdash.com)*`;
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `aihub-pins-${new Date().toISOString().slice(0,10)}.md`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('Pins exported ✓');
+}
+
+// ── Onboarding ────────────────────────────────────────────────────────────────
+
+function checkOnboarding() {
+  try {
+    const onboarded = localStorage.getItem('aihub_onboarded');
+    if (onboarded) return;
+  } catch(_) {}
+
+  const overlay = document.getElementById('onboardingOverlay');
+  if (!overlay) return;
+
+  // Small delay so the UI settles first
+  setTimeout(() => {
+    overlay.style.display = 'flex';
+
+    // Show Ollama hint if Ollama was detected
+    if (document.getElementById('ollamaDetectBanner')?.style.display !== 'none') {
+      document.getElementById('onboardingOllama').style.display = 'block';
+    }
+  }, 800);
+
+  document.getElementById('onboardingGotIt')?.addEventListener('click', () => {
+    const dontShow = document.getElementById('onboardingDontShow')?.checked;
+    if (dontShow) {
+      try { localStorage.setItem('aihub_onboarded', '1'); } catch(_) {}
+    }
+    overlay.style.display = 'none';
+  });
 }

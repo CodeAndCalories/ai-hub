@@ -105,6 +105,10 @@
       <button class="tb-btn" id="promptsBtn">prompts</button>
       <button class="tb-btn" id="memBtn">memory</button>
       <button class="tb-btn" id="padBtn">pad</button>
+      <button class="tb-btn" id="searchBtn" title="Search conversations (Ctrl+F)">🔍</button>
+      <button class="tb-btn" id="pinnedBtn" title="Pinned messages">📌</button>
+      <button class="tb-btn" id="analyticsBtn" title="Analytics & stats">📊</button>
+      <span class="tab-sync-indicator" id="tabSyncIndicator" style="display:none;" title="Connected tabs"></span>
       <button class="tb-btn share-btn" id="shareBtn" title="Share session link">↗ share</button>
       <div class="export-wrap" id="exportWrap">
         <button class="tb-btn" id="exportBtn">export ▾</button>
@@ -287,6 +291,78 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Analytics Modal -->
+<div class="modal-overlay" id="analyticsModal" style="display:none;">
+  <div class="modal-card analytics-modal-card">
+    <div class="modal-header">
+      <span>📊 Analytics</span>
+      <button class="modal-close" id="analyticsClose">✕</button>
+    </div>
+    <div id="analyticsContent" class="analytics-content"></div>
+  </div>
+</div>
+
+<!-- Search Overlay -->
+<div class="search-overlay" id="searchOverlay" style="display:none;">
+  <div class="search-box">
+    <input type="text" id="searchInput" class="search-input" placeholder="Search all conversations... (Esc to close)"/>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+</div>
+
+<!-- Pinned Drawer -->
+<div class="drawer" id="pinnedDrawer" style="display:none;">
+  <div class="drawer-top">
+    <span>📌 pinned messages</span>
+    <div class="drawer-acts">
+      <button class="db-btn" id="exportPinsBtn">↓ export</button>
+      <button class="db-btn" id="closePinnedBtn">✕</button>
+    </div>
+  </div>
+  <div class="pinned-global-list" id="pinnedGlobalList"></div>
+</div>
+
+<!-- Onboarding Overlay -->
+<div class="onboarding-overlay" id="onboardingOverlay" style="display:none;">
+  <div class="onboarding-card">
+    <div class="onboarding-logo">AI Hub</div>
+    <h2 class="onboarding-title">Welcome to AI Hub</h2>
+    <p class="onboarding-sub">Chat with multiple AIs at once. Here's how to get started:</p>
+    <div class="onboarding-steps">
+      <div class="onboarding-step">
+        <div class="onboarding-step-num">1</div>
+        <div>
+          <div class="onboarding-step-title">Add your API keys</div>
+          <div class="onboarding-step-desc">Enter keys for OpenAI, Anthropic, Google AI, or xAI. Gemini has a free tier.</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="onboarding-step-num">2</div>
+        <div>
+          <div class="onboarding-step-title">Choose your AIs</div>
+          <div class="onboarding-step-desc">Toggle each panel on or off. Use 1–4 panels at once.</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="onboarding-step-num">3</div>
+        <div>
+          <div class="onboarding-step-title">Start chatting</div>
+          <div class="onboarding-step-desc">Broadcast to all AIs at once, or chat individually with each panel.</div>
+        </div>
+      </div>
+    </div>
+    <div class="onboarding-ollama" id="onboardingOllama" style="display:none;">
+      🦙 <strong>Got Ollama?</strong> Connect instantly — run local AI for free, no API key needed.
+    </div>
+    <div class="onboarding-actions">
+      <button class="go-btn" id="onboardingGotIt">Got it — let's go</button>
+      <label class="onboarding-skip-label">
+        <input type="checkbox" id="onboardingDontShow"/> Don't show again
+      </label>
+    </div>
+  </div>
+</div>
+
 <!-- Shortcuts Modal -->
 <div class="shortcuts-modal" id="shortcutsModal" style="display:none;">
   <div class="shortcuts-card">
@@ -307,6 +383,7 @@
       <div class="shortcut-row"><kbd>P</kbd><span>Toggle prompt library</span></div>
       <div class="shortcut-row"><kbd>D</kbd><span>Toggle debate mode</span></div>
       <div class="shortcut-section">Export</div>
+      <div class="shortcut-row"><kbd>Cmd/Ctrl</kbd><kbd>F</kbd><span>Search conversations</span></div>
       <div class="shortcut-row"><kbd>Cmd/Ctrl</kbd><kbd>E</kbd><span>Export as Markdown</span></div>
       <div class="shortcut-row"><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd><span>Copy full conversation</span></div>
       <div class="shortcut-section">General</div>
