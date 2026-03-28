@@ -70,8 +70,10 @@
 html, body {
   height: 100%; background: var(--bg); color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 13px; overflow: hidden;
+  font-size: 13px;
 }
+/* overflow: hidden on body only (not html) — setting it on both blocks iOS touch scrolling */
+body { overflow: hidden; }
 
 /* ── SETUP ────────────────────────────────────────────────────── */
 #setupScreen {
@@ -306,6 +308,7 @@ code { font-family: monospace; font-size: 11px; color: #666; background: var(--b
 .chat-messages {
   flex: 1; overflow-y: auto; padding: 14px;
   display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 .chat-messages::-webkit-scrollbar { width: 5px; }
 .chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
@@ -888,4 +891,21 @@ kbd { display: inline-flex; align-items: center; justify-content: center; backgr
   background: none !important; border: none !important;
   color: #3a5a3a !important; padding: 4px 6px !important;
   font-size: 14px !important;
+}
+
+/* ── MOBILE SCROLL FIX ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Allow the page body to scroll on touch devices */
+  html, body { overflow: auto; }
+  /* Stack main screen naturally so content flows vertically */
+  #mainScreen { height: auto; min-height: 100dvh; }
+  /* Panels stack vertically and each expands to fit content */
+  .panels { overflow: visible; height: auto; flex: none; }
+  .panel { overflow: visible; height: auto; min-height: 60vh; }
+  /* Chat messages scrolls inside its panel on mobile */
+  .chat-messages { min-height: 300px; -webkit-overflow-scrolling: touch; }
+  /* Settings drawer scrollable on mobile */
+  .drawer { overflow-y: auto; -webkit-overflow-scrolling: touch; max-height: 50vh; }
+  /* Setup screen scrollable on mobile */
+  #setupScreen { -webkit-overflow-scrolling: touch; }
 }
