@@ -17,6 +17,106 @@
   <link rel="icon" type="image/svg+xml" href="./favicon.svg"/>
   <link rel="icon" type="image/png" href="./favicon.svg"/>
   <link rel="stylesheet" href="landing.css"/>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AI Hub",
+    "url": "https://aihubdash.com",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Chat with ChatGPT, Claude, Gemini, Grok, and local Ollama models simultaneously. Compare answers, run AI debates, broadcast questions to all AIs, and build shared memory. Free and open source.",
+    "featureList": [
+      "Multi-AI broadcast — send one message to all AIs simultaneously",
+      "Debate mode — AIs react to each other's answers across multiple rounds",
+      "Relay mode — cross-panel context sharing",
+      "Plan mode — structured planning with AI synthesis",
+      "Local Ollama model support — free and private",
+      "Persistent memory via Memstore",
+      "No account required",
+      "Open source"
+    ],
+    "screenshot": "https://aihubdash.com/og-image.png",
+    "creator": {
+      "@type": "Organization",
+      "name": "AI Hub",
+      "url": "https://aihubdash.com"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "AI Hub",
+    "url": "https://aihubdash.com",
+    "description": "Free, open-source multi-AI chat platform. Chat with ChatGPT, Claude, Gemini, Grok, and local models simultaneously.",
+    "sameAs": [
+      "https://github.com/CodeAndCalories/ai-hub"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is AI Hub really free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. AI Hub itself is completely free. You pay only for your own API usage directly to each provider — OpenAI, Anthropic, Google, xAI. Gemini has a free API tier with no credit card needed, so you can start for free right now."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are my API keys safe?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Your keys never leave your browser. AI Hub has no backend server — every API call goes directly from your browser to each AI provider. We physically cannot see your keys."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the difference between API mode and Native mode?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "API mode uses your API key to chat directly inside AI Hub. Native mode opens your real logged-in account in a browser tab — keeping your full chat history, memory, and subscription features intact."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is Ollama?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ollama lets you run AI models like Llama3, Mistral, and Phi3 locally on your computer — completely free and private. No API key needed. AI Hub connects to your local Ollama instance automatically."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is Memstore?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Memstore is a persistent memory API that lets AI Hub remember things across sessions and devices. AI Hub's built-in memory resets when you close the browser — Memstore makes it permanent. Free tier available at memstore.dev."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is there a browser extension?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes — AI Hub is also available as a Chrome and Opera GX extension. Same features in a popup, always one click away. Chrome Web Store listing coming soon."
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
@@ -58,6 +158,59 @@
   <span class="social-sep">·</span>
   <span class="social-item"><span class="social-dot purple"></span>Powered by your own API keys</span>
 </div>
+
+<!-- INTERACTIVE DEMO -->
+<section class="demo-section" id="demoSection">
+  <div class="container">
+    <h2 class="section-title">See it in action</h2>
+    <p class="section-sub">Watch three AIs answer the same question — simultaneously, with different perspectives.</p>
+    <div class="demo-shell">
+      <div class="demo-topbar">
+        <span class="demo-logo">AI Hub</span>
+        <div class="demo-topbar-pills">
+          <span class="demo-pill chatgpt-pill">ChatGPT</span>
+          <span class="demo-pill claude-pill">Claude</span>
+          <span class="demo-pill gemini-pill">Gemini</span>
+        </div>
+        <button class="demo-replay-btn" id="demoReplayBtn">↺ replay</button>
+      </div>
+      <div class="demo-broadcast-bar">
+        <span class="demo-broadcast-label">↗ broadcast</span>
+        <span class="demo-broadcast-text" id="demoBroadcastText"></span>
+      </div>
+      <div class="demo-panels" id="demoPanels">
+        <div class="demo-panel" id="dp-chatgpt">
+          <div class="demo-panel-header">
+            <span class="demo-dot" style="background:#10a37f"></span>
+            <span class="demo-panel-name">ChatGPT</span>
+            <span class="demo-panel-tag">structure & copy</span>
+          </div>
+          <div class="demo-messages" id="dm-chatgpt"></div>
+        </div>
+        <div class="demo-panel" id="dp-claude">
+          <div class="demo-panel-header">
+            <span class="demo-dot" style="background:#cc785c"></span>
+            <span class="demo-panel-name">Claude</span>
+            <span class="demo-panel-tag">design & UX</span>
+          </div>
+          <div class="demo-messages" id="dm-claude"></div>
+        </div>
+        <div class="demo-panel" id="dp-gemini">
+          <div class="demo-panel-header">
+            <span class="demo-dot" style="background:#4285f4"></span>
+            <span class="demo-panel-name">Gemini</span>
+            <span class="demo-panel-tag">SEO & technical</span>
+          </div>
+          <div class="demo-messages" id="dm-gemini"></div>
+        </div>
+      </div>
+      <div class="demo-cta" id="demoCta" style="display:none;">
+        <p>Impressed? Bring your own API keys and try it live.</p>
+        <a href="./dashboard/index.html" class="btn-primary">Try it yourself →</a>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- FEATURES -->
 <section class="features">
@@ -343,14 +496,160 @@
     <span class="footer-left">AI Hub · aihubdash.com</span>
     <div class="footer-links">
       <a href="./dashboard/index.html">Dashboard</a>
+      <a href="./compare/index.html">Compare</a>
+      <a href="./blog/index.html">Blog</a>
       <a href="https://memstore.dev" target="_blank">Memstore</a>
-      <a href="https://memstore.dev" target="_blank">memstore.dev</a>
     </div>
     <span class="footer-right">© 2025 · Powered by your own API keys</span>
   </div>
 </footer>
 
 <script>
+// ── Interactive Demo ────────────────────────────────────────────────────────
+(function() {
+  const BROADCAST_Q = "I'm building a SaaS product. Help me plan the landing page.";
+
+  const DEMO_SCRIPT = [
+    {
+      panel: 'chatgpt',
+      msg: "Great question! Here's a proven structure for a SaaS landing page:\n\n**1. Hero** — Clear headline, sub-headline, single CTA button. One job: get them to scroll.\n\n**2. Social proof** — Logos, user count, or a compelling quote. Put this right after the hero.\n\n**3. Feature grid** — 3–6 benefit-focused cards. Lead with outcomes, not features.\n\n**4. How it works** — 3 steps max. Remove every reason to hesitate.\n\n**5. Pricing** — Simple. If you have a free tier, lead with it.\n\n**6. FAQ + CTA** — Handle objections, then ask again.\n\nOne rule: every section should earn the scroll to the next."
+    },
+    {
+      panel: 'claude',
+      msg: "I'd approach it from the design and UX angle — because structure without feel converts poorly.\n\n**Visual hierarchy first.** Your hero needs one focal point. One headline, one CTA. Resist the urge to add a second button.\n\n**Whitespace is not wasted space.** Dense pages feel overwhelming. Give ideas room to breathe.\n\n**The 5-second test.** A stranger should be able to answer: *what does this do, who is it for, what do I do next* — in 5 seconds.\n\n**Mobile isn't an afterthought.** Most SaaS traffic is 60%+ mobile now. Design mobile-first, then scale up.\n\n**Copy tip:** Replace every 'we' with 'you'. Instead of 'We help teams collaborate' → 'Your team ships faster.' Visitors care about themselves, not you."
+    },
+    {
+      panel: 'gemini',
+      msg: "From an SEO and technical standpoint, a few things that are often overlooked:\n\n**Page speed matters enormously.** Google uses Core Web Vitals for ranking. Keep your landing page under 100KB of HTML/CSS, lazy-load images, defer JavaScript.\n\n**Structured data.** Add `SoftwareApplication` JSON-LD schema. This helps search engines and AI assistants understand what your product does — important for Perplexity, Google SGE, and ChatGPT Search.\n\n**Target comparison keywords.** Pages like 'Your Product vs Competitor' capture high-intent search traffic. Build these early.\n\n**Meta tags matter.** Your `og:description` shows in social previews and AI citation boxes. Make it 120–160 chars, benefit-focused.\n\n**One canonical URL.** Decide between www and non-www from day one and redirect consistently."
+    }
+  ];
+
+  let demoPlayed = false;
+  let demoStep = 0;
+  let demoTimer = null;
+
+  function typeText(el, text, speed, done) {
+    let i = 0;
+    el.textContent = '';
+    function tick() {
+      if (i < text.length) {
+        el.textContent += text[i++];
+        demoTimer = setTimeout(tick, speed);
+      } else {
+        if (done) done();
+      }
+    }
+    tick();
+  }
+
+  function addTypingIndicator(panelId) {
+    const el = document.createElement('div');
+    el.className = 'demo-typing';
+    el.id = 'dtyp-' + panelId;
+    el.innerHTML = '<span></span><span></span><span></span>';
+    document.getElementById('dm-' + panelId).appendChild(el);
+  }
+
+  function removeTyping(panelId) {
+    document.getElementById('dtyp-' + panelId)?.remove();
+  }
+
+  function addUserBubble(panelId, text) {
+    const msgs = document.getElementById('dm-' + panelId);
+    const el = document.createElement('div');
+    el.className = 'demo-bubble demo-bubble-user';
+    el.textContent = text;
+    msgs.appendChild(el);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function addAIBubble(panelId, text, cb) {
+    const msgs = document.getElementById('dm-' + panelId);
+    const el = document.createElement('div');
+    el.className = 'demo-bubble demo-bubble-ai';
+    // Render markdown-lite: bold, newlines
+    el.innerHTML = text
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\n/g,'<br>');
+    msgs.appendChild(el);
+    msgs.scrollTop = msgs.scrollHeight;
+    if (cb) setTimeout(cb, 300);
+  }
+
+  function broadcastUserMsg() {
+    const btEl = document.getElementById('demoBroadcastText');
+    btEl.textContent = '';
+    typeText(btEl, BROADCAST_Q, 28, () => {
+      // After broadcast types, show user bubbles in all panels simultaneously
+      ['chatgpt','claude','gemini'].forEach(p => addUserBubble(p, BROADCAST_Q));
+      demoTimer = setTimeout(runStep, 600);
+    });
+  }
+
+  function runStep() {
+    if (demoStep >= DEMO_SCRIPT.length) {
+      // All done — show CTA
+      demoTimer = setTimeout(() => {
+        document.getElementById('demoCta').style.display = 'block';
+      }, 800);
+      return;
+    }
+
+    const step = DEMO_SCRIPT[demoStep];
+    const panelId = step.panel;
+
+    // Show typing indicator
+    addTypingIndicator(panelId);
+
+    // Realistic delay: 1.2–2.0s thinking
+    const delay = 1200 + Math.random() * 800;
+    demoTimer = setTimeout(() => {
+      removeTyping(panelId);
+      addAIBubble(panelId, step.msg, () => {
+        demoStep++;
+        // Small gap between panels
+        demoTimer = setTimeout(runStep, 400);
+      });
+    }, delay);
+  }
+
+  function startDemo() {
+    if (demoPlayed) return;
+    demoPlayed = true;
+    demoStep = 0;
+    demoTimer = setTimeout(broadcastUserMsg, 600);
+  }
+
+  function resetDemo() {
+    // Clear timer
+    if (demoTimer) clearTimeout(demoTimer);
+    demoStep = 0;
+    demoPlayed = false;
+    // Clear all message areas
+    ['chatgpt','claude','gemini'].forEach(p => {
+      document.getElementById('dm-' + p).innerHTML = '';
+    });
+    document.getElementById('demoBroadcastText').textContent = '';
+    document.getElementById('demoCta').style.display = 'none';
+    startDemo();
+  }
+
+  // Auto-play on scroll via IntersectionObserver
+  const section = document.getElementById('demoSection');
+  if ('IntersectionObserver' in window) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { startDemo(); obs.disconnect(); } });
+    }, { threshold: 0.25 });
+    obs.observe(section);
+  } else {
+    // Fallback: start after 1s
+    setTimeout(startDemo, 1000);
+  }
+
+  document.getElementById('demoReplayBtn').addEventListener('click', resetDemo);
+})();
+
   document.getElementById('notifyForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const email = document.getElementById('notifyEmail').value.trim();

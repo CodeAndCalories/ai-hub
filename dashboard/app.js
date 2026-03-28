@@ -1507,6 +1507,157 @@ function setBrainstormStatus(msg) {
   if (el) el.textContent = msg;
 }
 
+// ── Plan Mode ─────────────────────────────────────────────────────────────────
+
+const PLAN_TEMPLATES = {
+  architecture: {
+    label: 'Architecture Review',
+    prompt: 'Review the architecture for this system and provide: 1) Key strengths, 2) Potential risks or weaknesses, 3) Specific recommendations for improvement.',
+    systemPrefix: 'You are a senior software architect. Be specific and technical.'
+  },
+  debug: {
+    label: 'Debug This',
+    prompt: 'Suggest debugging approaches for this issue. Provide: 1) Most likely root causes, 2) How to diagnose them, 3) Potential fixes.',
+    systemPrefix: 'You are an expert debugger. Be methodical and specific.'
+  },
+  compare: {
+    label: 'Compare Approaches',
+    prompt: 'Compare the technical approaches for this. Argue for the approach you think is best. Cover: 1) Tradeoffs, 2) When each shines, 3) Your recommendation.',
+    systemPrefix: 'You are a technical decision-maker. Be opinionated and justify your position.'
+  }
+};
+
+const PLAN = { running: false, topic: '', template: null, replies: {} };
+
+function bindPlanMode() {
+  const planBtn  = document.getElementById('planBtn');
+  const planBar  = document.getElementById('planBar');
+  const planSBar = document.getElementById('planSynthesisBar');
+
+  planBtn.addEventListener('click', () => {
+    const open = planBar.style.display !== 'none';
+    planBar.style.display = open ? 'none' : 'flex';
+    if (!open) document.getElementById('planInput').focus();
+  });
+
+  document.querySelectorAll('.plan-tpl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tpl = PLAN_TEMPLATES[btn.dataset.tpl];
+      if (!tpl) return;
+      PLAN.template = btn.dataset.tpl;
+      document.getElementById('planInput').placeholder = tpl.prompt;
+      document.querySelectorAll('.plan-tpl-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  document.getElementById('planStartBtn').addEventListener('click', startPlanMode);
+
+  document.getElementById('planSynthBtn').addEventListener('click', () => {
+    planSBar.style.display = 'none';
+    synthesizePlans();
+  });
+  document.getElementById('planSynthCloseBtn').addEventListener('click', () => {
+    planSBar.style.display = 'none';
+  });
+}
+
+async function startPlanMode() {
+  if (PLAN.running) return;
+  const topic = document.getElementById('planInput').value.trim();
+  if (!topic) { showToast('Enter a planning topic'); return; }
+
+  const targets = sendableKeys();
+  if (!targets.length) { showToast('No active AI panels'); return; }
+
+  const tpl = PLAN.template ? PLAN_TEMPLATES[PLAN.template] : null;
+  const systemPrompt = tpl
+    ? tpl.systemPrefix + '\n\n' + (S.memory || '')
+    : (S.memory || '');
+
+  const fullPrompt = tpl
+    ? `${topic}\n\n${tpl.prompt}`
+    : topic;
+
+  PLAN.running = true; PLAN.topic = topic; PLAN.replies = {};
+
+  document.getElementById('planSynthesisBar').style.display = 'none';
+
+  // Send to all active panels simultaneously
+  const sends = targets.map(async key => {
+    try {
+      const msgs = [{ role: 'user', content: fullPrompt }];
+      S.histories[key].push({ role: 'user', content: fullPrompt });
+      addBubble(key, 'user', fullPrompt);
+      const tid = addTyping(key);
+      S.loading[key] = true; setSend(key, true);
+
+      let reply;
+      if (DEMO_MODE) {
+        await new Promise(r => setTimeout(r, 900 + Math.random() * 800));
+        const dr = DEMO_RESPONSES[key];
+        reply = dr ? dr[DEMO_COUNTERS[key]++ % dr.length] : 'Demo response.';
+      } else if (key === 'ollama') {
+        reply = await AIS.ollama.call(null, msgs, systemPrompt, S.ollamaModel);
+      } else {
+        reply = await AIS[key].call(S.apiKeys[key], msgs, systemPrompt);
+      }
+
+      removeEl(tid);
+      S.histories[key].push({ role: 'assistant', content: reply });
+      addBubble(key, 'assistant', reply);
+      PLAN.replies[key] = reply;
+    } catch (err) {
+      removeEl('typing-' + key);
+      addBubble(key, 'assistant', `⚠ ${err.message}`);
+    } finally {
+      S.loading[key] = false; setSend(key, false);
+    }
+  });
+
+  await Promise.all(sends);
+  PLAN.running = false;
+
+  if (Object.keys(PLAN.replies).length >= 2) {
+    document.getElementById('planSynthesisBar').style.display = 'flex';
+  }
+}
+
+async function synthesizePlans() {
+  const sk = sendableKeys()[0];
+  if (!sk) { showToast('No active AI to synthesize'); return; }
+
+  const allPlans = Object.entries(PLAN.replies)
+    .map(([key, reply]) => `**${AIS[key]?.name || key}:**\n${reply}`)
+    .join('\n\n---\n\n');
+
+  const metaPrompt = `Here are planning responses from multiple AI models on the topic: "${PLAN.topic}"\n\n${allPlans}\n\nProvide a concise synthesis:\n1. **What all AIs agreed on** — common recommendations\n2. **Where they differed** — key disagreements or unique angles\n3. **Recommended approach** — the best path forward combining their insights\n\nBe concise and actionable.`;
+
+  try {
+    addBubble(sk, 'user', '✦ Synthesizing all plans...');
+    const tid = addTyping(sk);
+    S.loading[sk] = true; setSend(sk, true);
+
+    let reply;
+    if (DEMO_MODE) {
+      await new Promise(r => setTimeout(r, 1200));
+      reply = '**All AIs agreed:** Start with a clear value proposition and social proof. Mobile-first design. Fast page load.\n\n**Where they differed:** ChatGPT emphasized structure/flow; Claude focused on UX polish; Gemini prioritized technical SEO.\n\n**Recommended approach:** Follow ChatGPT\'s structure, apply Claude\'s UX polish, implement Gemini\'s SEO recommendations from day one. These are complementary, not competing.';
+    } else if (sk === 'ollama') {
+      reply = await AIS.ollama.call(null, [{ role: 'user', content: metaPrompt }], null, S.ollamaModel);
+    } else {
+      reply = await AIS[sk].call(S.apiKeys[sk], [{ role: 'user', content: metaPrompt }], null);
+    }
+
+    removeEl(tid);
+    S.histories[sk].push({ role: 'assistant', content: reply });
+    addBubble(sk, 'assistant', reply);
+  } catch (err) {
+    showToast('Synthesis failed: ' + err.message);
+  } finally {
+    S.loading[sk] = false; setSend(sk, false);
+  }
+}
+
 // ── Conflict Detection ────────────────────────────────────────────────────────
 
 // Called after every broadcast with ≥2 real API panels.
@@ -1614,19 +1765,12 @@ function bindPromptLibrary() {
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
-function exportSession() {
+function buildExportMarkdown() {
   const now      = new Date();
-  const dateStr  = now.toISOString().slice(0, 10);  // YYYY-MM-DD for filename
   const dateTime = now.toLocaleString();
-
   let md = `# AI Hub Session Export\nDate: ${dateTime}\n\n`;
-
-  if (S.memory.trim()) {
-    md += `## Memory Context\n${S.memory.trim()}\n\n`;
-  }
-
+  if (S.memory.trim()) md += `## Memory Context\n${S.memory.trim()}\n\n`;
   md += `## Conversations\n\n`;
-
   ALL_KEYS.forEach(key => {
     const hist = S.histories[key];
     if (!hist || !hist.length) return;
@@ -1637,9 +1781,13 @@ function exportSession() {
       else                     md += `**${name}:** ${msg.content}\n\n`;
     });
   });
+  md += `---\nExported from AI Hub · https://aihubdash.com`;
+  return md;
+}
 
-  md += `---\nExported from AI Hub · https://codeandcalories.github.io/ai-hub/dashboard/`;
-
+function exportSession() {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const md = buildExportMarkdown();
   const blob = new Blob([md], { type: 'text/markdown' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -1647,6 +1795,39 @@ function exportSession() {
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
   showToast('Session exported ✓');
+}
+
+function exportSessionJSON() {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const data = {
+    exported: new Date().toISOString(),
+    memory: S.memory,
+    conversations: {}
+  };
+  ALL_KEYS.forEach(key => {
+    const hist = S.histories[key];
+    if (hist && hist.length) {
+      const name = key === 'ollama' ? `Ollama (${S.ollamaModel})` : AIS[key].name;
+      data.conversations[name] = hist;
+    }
+  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `aihub-export-${dateStr}.json`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('JSON exported ✓');
+}
+
+async function copySessionToClipboard() {
+  const text = buildExportMarkdown();
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Copied to clipboard!');
+  } catch (_) {
+    showToast('Copy failed — try exporting instead');
+  }
 }
 
 // ── Demo Functions ────────────────────────────────────────────────────────────
@@ -1775,13 +1956,26 @@ function bindMain() {
 
   bindDebate();
   bindBrainstorm();
+  bindPlanMode();
   bindDrawers();
   bindTemplates();
   bindPromptLibrary();
   loadPrompts();
   bindKeyboardShortcuts();
   bindWorkflows();
-  document.getElementById('exportBtn').addEventListener('click', exportSession);
+  // Export dropdown
+  const exportBtn      = document.getElementById('exportBtn');
+  const exportDropdown = document.getElementById('exportDropdown');
+  exportBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = exportDropdown.style.display !== 'none';
+    exportDropdown.style.display = open ? 'none' : 'block';
+  });
+  document.addEventListener('click', () => { exportDropdown.style.display = 'none'; });
+  exportDropdown.addEventListener('click', e => e.stopPropagation());
+  document.getElementById('exportMdBtn').addEventListener('click',   () => { exportDropdown.style.display='none'; exportSession(); });
+  document.getElementById('exportJsonBtn').addEventListener('click', () => { exportDropdown.style.display='none'; exportSessionJSON(); });
+  document.getElementById('exportCopyBtn').addEventListener('click', () => { exportDropdown.style.display='none'; copySessionToClipboard(); });
   document.getElementById('conflictDismiss').addEventListener('click', () => {
     document.getElementById('conflictBanner').style.display = 'none';
   });
@@ -1806,7 +2000,8 @@ function bindKeyboardShortcuts() {
     // Escape — close any open drawer or modal
     if (e.key === 'Escape') {
       if (modal && modal.style.display !== 'none') { modal.style.display = 'none'; return; }
-      ['memDrawer','padDrawer','tplPanel','debateBar','brainstormBar','promptsDrawer','workflowsDrawer'].forEach(id => {
+      document.getElementById('exportDropdown').style.display = 'none';
+      ['memDrawer','padDrawer','tplPanel','debateBar','brainstormBar','planBar','planSynthesisBar','promptsDrawer','workflowsDrawer'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.style.display !== 'none') el.style.display = 'none';
       });
@@ -1981,4 +2176,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const d = store.get(['view', 'modes', 'memLabel', 'ollamaOn', 'ollamaModel']);
   if (d.view) S.view = d.view;
   buildSetup({ modes: d.modes, memoryLabel: d.memLabel, ollamaOn: d.ollamaOn, ollamaModel: d.ollamaModel });
+  detectOllamaOnLoad(d.ollamaOn);
 });
+
+// ── Ollama Auto-Detection ──────────────────────────────────────────────────────
+
+async function detectOllamaOnLoad(alreadyOn) {
+  // Don't nag if Ollama is already enabled
+  if (alreadyOn) return;
+  try {
+    const res = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) });
+    if (!res.ok) return;
+    // Ollama is running — show the banner
+    const banner = document.getElementById('ollamaDetectBanner');
+    if (banner) banner.style.display = 'flex';
+
+    document.getElementById('ollamaDetectConnectBtn').addEventListener('click', () => {
+      banner.style.display = 'none';
+      // Enable Ollama in the setup form
+      S.ollamaOn = true; S.modes.ollama = 'api';
+      document.querySelectorAll('[data-olmode]').forEach(b => {
+        b.classList.toggle('active', b.dataset.olmode === 'on');
+      });
+      document.getElementById('ollamaKeyRow').style.opacity = '1';
+      // Scroll to Ollama section
+      document.getElementById('ollamaSetup')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    document.getElementById('ollamaDetectDismiss').addEventListener('click', () => {
+      banner.style.display = 'none';
+    });
+  } catch (_) {
+    // Ollama not running — do nothing silently
+  }
+}

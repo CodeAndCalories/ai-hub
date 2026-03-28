@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Hub Blog — Multi-AI Tips, Guides & Updates</title>
+  <meta name="description" content="The AI Hub blog — guides on using multiple AIs together, debate mode tips, Ollama setup, and updates on new features."/>
+  <link rel="canonical" href="https://aihubdash.com/blog/"/>
+  <link rel="stylesheet" href="../landing.css"/>
+</head>
+<body>
+<nav>
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">AI Hub</a>
+    <div class="nav-right">
+      <a href="../index.html" class="nav-link">Home</a>
+      <a href="../compare/index.html" class="nav-link">Compare</a>
+      <a href="../dashboard/index.html" class="nav-cta">Try Demo</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero" style="padding:60px 0 40px;">
+  <div class="container hero-inner">
+    <h1 style="font-size:40px;">Blog</h1>
+    <p class="hero-sub">Guides, tips, and updates from the AI Hub team. Learn how to get the most out of multi-AI workflows.</p>
+  </div>
+</section>
+
+<section style="padding:40px 0 80px;border-top:1px solid #1e1e1e;">
+  <div class="container" style="max-width:720px;">
+    <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:48px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:16px;">✍️</div>
+      <h2 style="font-size:20px;color:#fff;margin-bottom:12px;">Coming soon</h2>
+      <p style="color:#666;font-size:14px;line-height:1.7;margin-bottom:28px;">The AI Hub blog is launching shortly. Sign up below to get notified when the first posts go live — covering multi-AI workflows, debate mode guides, Ollama setup, and how to get the most out of comparing AI models.</p>
+      <form id="blogNotifyForm" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <input type="email" id="blogEmail" placeholder="your@email.com" class="notify-input"/>
+        <button type="submit" class="notify-btn">Notify me</button>
+      </form>
+      <p style="font-size:11px;color:#333;margin-top:12px;">No spam. Unsubscribe anytime.</p>
+    </div>
+
+    <div style="margin-top:48px;">
+      <h3 style="font-size:16px;color:#555;margin-bottom:20px;letter-spacing:0.05em;text-transform:uppercase;font-size:11px;">Topics we'll cover</h3>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 How to run a multi-AI debate — and what to do with the results</div>
+        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Setting up Ollama for free local AI alongside cloud models</div>
+        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Plan mode: using AI Hub to architect software projects</div>
+        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Building a shared memory system with Memstore</div>
+        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Relay mode explained: turning parallel AIs into a team</div>
+        <div style="padding:16px 0;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 The best system prompts for multi-AI brainstorming</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-inner">
+    <span class="footer-left">AI Hub · aihubdash.com</span>
+    <div class="footer-links">
+      <a href="../index.html">Home</a>
+      <a href="../compare/index.html">Compare</a>
+      <a href="../dashboard/index.html">Dashboard</a>
+    </div>
+    <span class="footer-right">© 2025</span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('blogNotifyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const email = document.getElementById('blogEmail').value.trim();
+    if (!email) return;
+    try {
+      const res = await fetch('https://memstore.dev/v1/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (res.ok) {
+        this.innerHTML = '<p style="color:#4a9;font-size:14px;padding:12px 0;">You\'re on the list!</p>';
+      } else {
+        this.innerHTML += '<p style="color:#e07070;font-size:13px;margin-top:8px;">Something went wrong — try again</p>';
+      }
+    } catch (_) {
+      this.innerHTML += '<p style="color:#e07070;font-size:13px;margin-top:8px;">Something went wrong — try again</p>';
+    }
+  });
+</script>
+</body>
+</html>

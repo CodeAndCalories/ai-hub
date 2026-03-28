@@ -10,6 +10,13 @@
 </head>
 <body>
 
+<!-- Ollama auto-detect banner (shown only if Ollama is running at launch) -->
+<div class="ollama-detect-banner" id="ollamaDetectBanner" style="display:none;">
+  <span>🦙 Ollama detected — run local AI for free.</span>
+  <button id="ollamaDetectConnectBtn">Connect →</button>
+  <button class="ollama-detect-dismiss" id="ollamaDetectDismiss">✕</button>
+</div>
+
 <!-- SETUP SCREEN -->
 <div id="setupScreen">
   <div class="setup-wrap">
@@ -88,10 +95,18 @@
       <button class="tb-btn relay-btn" id="relayBtn">relay off</button>
       <button class="tb-btn debate-btn" id="debateBtn">⚔ debate</button>
       <button class="tb-btn brainstorm-btn" id="brainstormBtn">🧠 brainstorm</button>
+      <button class="tb-btn plan-btn" id="planBtn">📋 plan</button>
       <button class="tb-btn" id="promptsBtn">prompts</button>
       <button class="tb-btn" id="memBtn">memory</button>
       <button class="tb-btn" id="padBtn">pad</button>
-      <button class="tb-btn" id="exportBtn">export</button>
+      <div class="export-wrap" id="exportWrap">
+        <button class="tb-btn" id="exportBtn">export ▾</button>
+        <div class="export-dropdown" id="exportDropdown" style="display:none;">
+          <button id="exportMdBtn">↓ Markdown (.md)</button>
+          <button id="exportJsonBtn">↓ JSON (.json)</button>
+          <button id="exportCopyBtn">⎘ Copy to clipboard</button>
+        </div>
+      </div>
       <button class="tb-btn" id="workflowsBtn">workflows</button>
       <button class="tb-btn" id="shortcutsBtn" title="Keyboard shortcuts (?)">?</button>
       <button class="tb-btn settings" id="settingsBtn">⚙ settings</button>
@@ -140,6 +155,27 @@
     <span class="summary-label">brainstorm complete</span>
     <button class="db-btn" id="brainstormSumBtn">✦ synthesize ideas</button>
     <button class="db-btn" id="brainstormSumCloseBtn">✕</button>
+  </div>
+
+  <!-- plan mode bar -->
+  <div class="plan-bar" id="planBar" style="display:none;">
+    <div class="plan-bar-left">
+      <span class="plan-label">📋 plan mode</span>
+      <div class="plan-templates">
+        <button class="plan-tpl-btn" data-tpl="architecture">Architecture Review</button>
+        <button class="plan-tpl-btn" data-tpl="debug">Debug This</button>
+        <button class="plan-tpl-btn" data-tpl="compare">Compare Approaches</button>
+      </div>
+    </div>
+    <input type="text" id="planInput" placeholder="Describe what you want each AI to plan..."/>
+    <button id="planStartBtn">run ▶</button>
+  </div>
+
+  <!-- plan synthesis bar -->
+  <div class="summary-bar" id="planSynthesisBar" style="display:none;">
+    <span class="summary-label">plan complete</span>
+    <button class="db-btn" id="planSynthBtn">✦ synthesize plans</button>
+    <button class="db-btn" id="planSynthCloseBtn">✕</button>
   </div>
 
   <!-- conflict banner — shown when broadcast models disagree -->
