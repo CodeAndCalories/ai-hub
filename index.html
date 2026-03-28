@@ -84,10 +84,10 @@
       },
       {
         "@type": "Question",
-        "name": "What is the difference between API mode and Native mode?",
+        "name": "Do I need a paid subscription to use AI Hub?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "API mode uses your API key to chat directly inside AI Hub. Native mode opens your real logged-in account in a browser tab — keeping your full chat history, memory, and subscription features intact."
+          "text": "No. AI Hub itself is always free. You only need API keys from the AI providers you want to use. Gemini's API has a free tier with no credit card required."
         }
       },
       {
@@ -136,7 +136,8 @@
     <h1>One tab.<br>Every AI.</h1>
     <p class="hero-sub">Stop juggling ChatGPT, Claude, Gemini, and Grok across tabs. AI Hub puts them side by side — compare answers, run structured debates, and build shared memory. Free and open to use.</p>
     <div class="hero-btns">
-      <a href="./dashboard/index.html" class="btn-primary">Try the dashboard →</a>
+      <a href="./dashboard/index.html" class="btn-primary btn-glow">Try the dashboard →</a>
+      <a href="#demoSection" class="btn-secondary" onclick="document.getElementById('demoSection').scrollIntoView({behavior:'smooth'});return false;">Watch demo ↓</a>
     </div>
     <div class="trust-badges">
       <span class="trust-badge">⚡ Free to use</span>
@@ -158,6 +159,17 @@
   <span class="social-sep">·</span>
   <span class="social-item"><span class="social-dot purple"></span>Powered by your own API keys</span>
 </div>
+
+<!-- VIDEO PLACEHOLDER -->
+<section class="video-section">
+  <div class="container">
+    <div class="video-card">
+      <div class="video-play-icon">▶</div>
+      <div class="video-label">Watch the 30-second setup</div>
+      <div class="video-sub">See AI Hub in action before you open it</div>
+    </div>
+  </div>
+</section>
 
 <!-- INTERACTIVE DEMO -->
 <section class="demo-section" id="demoSection">
@@ -208,6 +220,33 @@
         <p>Impressed? Bring your own API keys and try it live.</p>
         <a href="./dashboard/index.html" class="btn-primary">Try it yourself →</a>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- EMAIL CAPTURE (moved here — right after demo) -->
+<section class="notify-section">
+  <div class="notify-card">
+    <h2>Stay in the loop</h2>
+    <p>Get notified when the Chrome extension hits the Web Store and when new features ship.</p>
+    <form class="notify-form" id="notifyForm">
+      <input type="email" id="notifyEmail" placeholder="your@email.com" class="notify-input"/>
+      <button type="submit" class="notify-btn">Notify me</button>
+    </form>
+    <p class="notify-fine">No spam. Unsubscribe anytime.</p>
+  </div>
+</section>
+
+<!-- BUILT WITH -->
+<section class="built-with-section">
+  <div class="container">
+    <p class="built-with-label">Connects to</p>
+    <div class="built-with-logos">
+      <div class="bw-logo"><span class="bw-dot" style="background:#10a37f"></span>OpenAI</div>
+      <div class="bw-logo"><span class="bw-dot" style="background:#cc785c"></span>Anthropic</div>
+      <div class="bw-logo"><span class="bw-dot" style="background:#4285f4"></span>Google AI</div>
+      <div class="bw-logo"><span class="bw-dot" style="background:#1d9bf0"></span>xAI / Grok</div>
+      <div class="bw-logo"><span class="bw-dot" style="background:#e8704a"></span>Ollama</div>
     </div>
   </div>
 </section>
@@ -289,7 +328,7 @@
       <div class="step">
         <div class="step-num">1</div>
         <h3>Set up in 30 seconds</h3>
-        <p>Enter your API keys or try demo mode instantly. Set each AI to API, Native (your real account), or Off.</p>
+        <p>Enter your API keys or try demo mode instantly. Toggle each AI on or off — Gemini has a free API key so you can start right now.</p>
       </div>
       <div class="step-divider"></div>
       <div class="step">
@@ -307,17 +346,17 @@
   </div>
 </section>
 
-<!-- NATIVE MODE CALLOUT -->
+<!-- SUBSCRIPTIONS CALLOUT -->
 <section class="callout native-callout">
   <div class="container callout-inner">
     <div class="callout-text">
-      <h2>Use your real accounts. Keep your memory.</h2>
-      <p>Set any AI to Native mode and AI Hub opens your actual logged-in tab — your ChatGPT Plus subscription, your Claude Pro memory, your Gemini history. Everything intact. AI Hub just removes the tab chaos.</p>
+      <h2>Your API keys. Your costs. No middleman.</h2>
+      <p>AI Hub never proxies your requests — every API call goes directly from your browser to each AI provider. No markup, no data collection, no account needed. Pay OpenAI, Anthropic, and Google directly at their standard rates.</p>
     </div>
     <div class="callout-badge">
-      <span class="badge-item">ChatGPT Plus ✓</span>
-      <span class="badge-item">Claude Pro ✓</span>
-      <span class="badge-item">Gemini Advanced ✓</span>
+      <span class="badge-item">OpenAI API ✓</span>
+      <span class="badge-item">Anthropic API ✓</span>
+      <span class="badge-item">Google AI API ✓</span>
     </div>
   </div>
 </section>
@@ -364,7 +403,7 @@
             <td class="cross">✗</td>
           </tr>
           <tr>
-            <td>Native tab mode</td>
+            <td>Direct API (no proxy)</td>
             <td class="aihub-col check">✓</td>
             <td class="cross">✗</td>
             <td class="cross">✗</td>
@@ -444,18 +483,6 @@
   </div>
 </section>
 
-<!-- EMAIL CAPTURE -->
-<section class="notify-section">
-  <div class="notify-card">
-    <h2>Stay in the loop</h2>
-    <p>Get notified when the Chrome extension hits the Web Store and when new features ship.</p>
-    <form class="notify-form" id="notifyForm">
-      <input type="email" id="notifyEmail" placeholder="your@email.com" class="notify-input"/>
-      <button type="submit" class="notify-btn">Notify me</button>
-    </form>
-    <p class="notify-fine">No spam. Unsubscribe anytime.</p>
-  </div>
-</section>
 
 <!-- FAQ -->
 <section class="faq-section">
@@ -471,8 +498,8 @@
         <div class="faq-a">Yes. Your keys never leave your browser. AI Hub has no backend server — every API call goes directly from your browser to each AI provider. We physically cannot see your keys.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q">What's the difference between API mode and Native mode?</div>
-        <div class="faq-a">API mode uses your API key to chat directly inside AI Hub. Native mode opens your real logged-in account in a browser tab — keeping your full chat history, memory, and subscription features intact.</div>
+        <div class="faq-q">Do I need a paid subscription to use AI Hub?</div>
+        <div class="faq-a">No. AI Hub itself is always free. You only need API keys from the AI providers you want to use. Gemini's API has a free tier with no credit card required — start there if you want to try AI Hub without spending anything.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q">What is Ollama?</div>
@@ -500,7 +527,7 @@
       <a href="./blog/index.html">Blog</a>
       <a href="https://memstore.dev" target="_blank">Memstore</a>
     </div>
-    <span class="footer-right">© 2025 · Powered by your own API keys</span>
+    <span class="footer-right">© <span id="copyrightYear">2025</span> · Powered by your own API keys</span>
   </div>
 </footer>
 
@@ -649,6 +676,9 @@
 
   document.getElementById('demoReplayBtn').addEventListener('click', resetDemo);
 })();
+
+  // Dynamic copyright year
+  document.getElementById('copyrightYear').textContent = new Date().getFullYear();
 
   document.getElementById('notifyForm').addEventListener('submit', async function(e) {
     e.preventDefault();
