@@ -4,9 +4,20 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Hub Blog — Multi-AI Tips, Guides & Updates</title>
-  <meta name="description" content="The AI Hub blog — guides on using multiple AIs together, debate mode tips, Ollama setup, and updates on new features."/>
+  <meta name="description" content="The AI Hub blog — guides on using multiple AIs together, model comparisons, Ollama setup, broadcast mode tips, and updates on new features."/>
   <link rel="canonical" href="https://aihubdash.com/blog/"/>
   <link rel="stylesheet" href="../landing.css"/>
+  <style>
+    .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 60px; }
+    .post-card { background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; transition: border-color 0.15s; text-decoration: none; }
+    .post-card:hover { border-color: #333; }
+    .post-card-tag { display: inline-block; background: #1a1a2e; color: #7c6aff; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-bottom: 12px; width: fit-content; }
+    .post-card h2 { font-size: 15px; color: #e0e0e0; line-height: 1.45; margin: 0 0 10px; font-weight: 600; }
+    .post-card p { font-size: 13px; color: #666; line-height: 1.6; margin: 0 0 16px; flex: 1; }
+    .post-card-meta { font-size: 11px; color: #444; }
+    @media (max-width: 860px) { .post-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .post-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
 <nav>
@@ -23,33 +34,56 @@
 <section class="hero" style="padding:60px 0 40px;">
   <div class="container hero-inner">
     <h1 style="font-size:40px;">Blog</h1>
-    <p class="hero-sub">Guides, tips, and updates from the AI Hub team. Learn how to get the most out of multi-AI workflows.</p>
+    <p class="hero-sub">Guides, comparisons, and practical tips for getting the most out of multi-AI workflows.</p>
   </div>
 </section>
 
-<section style="padding:40px 0 80px;border-top:1px solid #1e1e1e;">
-  <div class="container" style="max-width:720px;">
-    <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:48px;text-align:center;">
-      <div style="font-size:36px;margin-bottom:16px;">✍️</div>
-      <h2 style="font-size:20px;color:#fff;margin-bottom:12px;">Coming soon</h2>
-      <p style="color:#666;font-size:14px;line-height:1.7;margin-bottom:28px;">The AI Hub blog is launching shortly. Sign up below to get notified when the first posts go live — covering multi-AI workflows, debate mode guides, Ollama setup, and how to get the most out of comparing AI models.</p>
-      <form id="blogNotifyForm" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-        <input type="email" id="blogEmail" placeholder="your@email.com" class="notify-input"/>
-        <button type="submit" class="notify-btn">Notify me</button>
-      </form>
-      <p style="font-size:11px;color:#333;margin-top:12px;">No spam. Unsubscribe anytime.</p>
-    </div>
+<section style="padding:20px 0 80px;border-top:1px solid #1e1e1e;">
+  <div class="container">
+    <div class="post-grid">
 
-    <div style="margin-top:48px;">
-      <h3 style="font-size:16px;color:#555;margin-bottom:20px;letter-spacing:0.05em;text-transform:uppercase;font-size:11px;">Topics we'll cover</h3>
-      <div style="display:flex;flex-direction:column;gap:0;">
-        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 How to run a multi-AI debate — and what to do with the results</div>
-        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Setting up Ollama for free local AI alongside cloud models</div>
-        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Plan mode: using AI Hub to architect software projects</div>
-        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Building a shared memory system with Memstore</div>
-        <div style="padding:16px 0;border-top:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 Relay mode explained: turning parallel AIs into a team</div>
-        <div style="padding:16px 0;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;color:#555;font-size:14px;">🔜 The best system prompts for multi-AI brainstorming</div>
-      </div>
+      <a href="chatgpt-vs-claude-comparison-2026.html" class="post-card">
+        <span class="post-card-tag">AI Comparison</span>
+        <h2>ChatGPT vs Claude: Which AI Is Better in 2026?</h2>
+        <p>An honest side-by-side of ChatGPT and Claude — strengths, weak spots, and when to reach for each. Plus how to test both without switching tabs.</p>
+        <span class="post-card-meta">April 2026 · 9 min read</span>
+      </a>
+
+      <a href="best-ai-chat-dashboard-2026.html" class="post-card">
+        <span class="post-card-tag">Roundup</span>
+        <h2>Best AI Chat Dashboards in 2026</h2>
+        <p>A roundup of every serious multi-model AI dashboard — AiHubDash, ChatHub, TypingMind, OpenRouter, Poe, and local-first tools. Who each one is actually for.</p>
+        <span class="post-card-meta">April 2026 · 8 min read</span>
+      </a>
+
+      <a href="compare-ai-models-side-by-side.html" class="post-card">
+        <span class="post-card-tag">Guide</span>
+        <h2>How to Compare AI Models Side by Side</h2>
+        <p>A practical walkthrough of broadcast mode, what to look for when comparing responses, and which prompt types reveal the biggest differences between models.</p>
+        <span class="post-card-meta">April 2026 · 7 min read</span>
+      </a>
+
+      <a href="chatgpt-alternatives-2026.html" class="post-card">
+        <span class="post-card-tag">AI Models</span>
+        <h2>Top ChatGPT Alternatives Worth Trying in 2026</h2>
+        <p>Claude, Gemini, Grok, and local models are all serious options now. Here's an honest look at each and when to reach for something other than the default.</p>
+        <span class="post-card-meta">April 2026 · 9 min read</span>
+      </a>
+
+      <a href="ai-model-comparison-tool.html" class="post-card">
+        <span class="post-card-tag">Product</span>
+        <h2>Free AI Model Comparison Tool — No Account Required</h2>
+        <p>How AiHubDash works, what makes the BYOK architecture different, and why "no account required" isn't just a marketing line — it's the actual product design.</p>
+        <span class="post-card-meta">April 2026 · 6 min read</span>
+      </a>
+
+      <a href="ollama-local-ai-dashboard.html" class="post-card">
+        <span class="post-card-tag">Self-Hosted</span>
+        <h2>Run Local AI Models with Ollama + AiHubDash</h2>
+        <p>Step-by-step guide to connecting Ollama to AiHubDash and running Llama, Mistral, or Phi-3 alongside cloud models — completely private, zero API costs.</p>
+        <span class="post-card-meta">April 2026 · 10 min read</span>
+      </a>
+
     </div>
   </div>
 </section>
@@ -62,30 +96,8 @@
       <a href="../compare/index.html">Compare</a>
       <a href="../dashboard/index.html">Dashboard</a>
     </div>
-    <span class="footer-right">© 2025</span>
+    <span class="footer-right">© 2026</span>
   </div>
 </footer>
-
-<script>
-  document.getElementById('blogNotifyForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const email = document.getElementById('blogEmail').value.trim();
-    if (!email) return;
-    try {
-      const res = await fetch('https://memstore.dev/v1/newsletter/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      if (res.ok) {
-        this.innerHTML = '<p style="color:#4a9;font-size:14px;padding:12px 0;">You\'re on the list!</p>';
-      } else {
-        this.innerHTML += '<p style="color:#e07070;font-size:13px;margin-top:8px;">Something went wrong — try again</p>';
-      }
-    } catch (_) {
-      this.innerHTML += '<p style="color:#e07070;font-size:13px;margin-top:8px;">Something went wrong — try again</p>';
-    }
-  });
-</script>
 </body>
 </html>
