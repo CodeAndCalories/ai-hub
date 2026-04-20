@@ -99,6 +99,7 @@
     <div class="broadcast-inline">
       <input type="text" id="broadcastInput" placeholder="Broadcast to all active panels..."/>
       <button id="broadcastBtn">↗ all</button>
+      <button class="compare-btn" id="compareBtn" style="display:none;">⚖ compare responses</button>
     </div>
     <div class="topbar-right">
       <button class="tb-btn relay-btn" id="relayBtn">relay off</button>
@@ -290,6 +291,18 @@
     <div class="prompt-list" id="communityPromptList"></div>
   </div>
 
+</div>
+
+<div class="compare-modal" id="compareModal" style="display:none;">
+  <div class="compare-card">
+    <div class="compare-header">
+      <span>Response Comparison</span>
+      <span class="compare-sub">Highlights unique content per AI</span>
+      <button class="tb-btn" id="compareToPadBtn" style="font-size:11px;padding:2px 8px;">→ pad</button>
+      <button class="compare-close" id="compareClose">✕</button>
+    </div>
+    <div class="compare-grid" id="compareGrid"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>

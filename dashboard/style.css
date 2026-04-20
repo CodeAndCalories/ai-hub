@@ -1079,3 +1079,156 @@ kbd { display: inline-flex; align-items: center; justify-content: center; backgr
 }
 .branch-pill:hover { border-color: var(--accent); color: var(--text2); }
 .branch-pill.active { background: rgba(124,106,255,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* ── RESPONSE DIFF / COMPARE ────────────────────────────────── */
+.compare-btn {
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 5px; border: 1px solid #334;
+  background: #0e0e1a; color: #668;
+  cursor: pointer; transition: all 0.12s;
+  white-space: nowrap; font-family: inherit;
+}
+.compare-btn:hover { color: #aaf; border-color: #446; }
+
+.compare-modal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.8);
+  display: flex; align-items: center;
+  justify-content: center; padding: 20px;
+}
+.compare-card {
+  background: #131313; border: 1px solid #2e2e2e;
+  border-radius: 12px; width: 100%; max-width: 900px;
+  max-height: 80vh; display: flex;
+  flex-direction: column; overflow: hidden;
+}
+.compare-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; border-bottom: 1px solid #222;
+  font-size: 13px; font-weight: 500; color: #e0e0e0;
+  flex-shrink: 0;
+}
+.compare-sub { font-size: 11px; color: #444; flex: 1; }
+.compare-close {
+  background: none; border: none; color: #555;
+  cursor: pointer; font-size: 15px; padding: 0; font-family: inherit;
+}
+.compare-close:hover { color: #aaa; }
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px; background: #1a1a1a;
+  overflow-y: auto; flex: 1;
+}
+.compare-col {
+  background: #0e0e0e; padding: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.compare-col-header {
+  font-size: 12px; font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+}
+.compare-col-body {
+  font-size: 12px; color: #888; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word;
+}
+mark.diff-unique {
+  background: rgba(124, 106, 255, 0.15);
+  color: #b0a0ff;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* ── MOBILE OPTIMIZATION ────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Force 1 panel on mobile */
+  .panels.v2, .panels.v3, .panels.v4 {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+  }
+
+  /* Hide panels beyond first on mobile unless user chose 1-col */
+  .panels:not(.v1) .panel:not(:first-child) {
+    display: none;
+  }
+
+  /* Topbar — collapse view buttons, make more compact */
+  .topbar {
+    padding: 0 10px;
+    height: 44px;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .topbar .logo { font-size: 15px; }
+
+  /* Hide 3 and 4 view buttons on mobile */
+  .vb[data-v="3"], .vb[data-v="4"] {
+    display: none;
+  }
+
+  /* Broadcast bar — hide from topbar on mobile */
+  .broadcast-inline {
+    display: none;
+  }
+
+  /* Show broadcast below topbar on mobile */
+  .broadcast-row {
+    display: flex !important;
+  }
+
+  /* Make drawers full height on mobile */
+  .drawer {
+    max-height: 60vh;
+  }
+
+  /* Bigger touch targets for inputs */
+  .chat-textarea {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+  .send-btn {
+    min-height: 44px;
+    padding: 0 16px;
+  }
+
+  /* Panel header more compact */
+  .ph { padding: 6px 10px; }
+  .ph-name { font-size: 12px; }
+
+  /* Chat messages more padding */
+  .chat-messages { padding: 10px; }
+  .bubble { max-width: 95%; font-size: 13px; }
+
+  /* Topbar right — show fewer buttons */
+  .tb-btn:not(#memBtn):not(#settingsBtn):not(#relayBtn) {
+    display: none;
+  }
+
+  /* Tab bar scrollable on mobile */
+  .tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 5px 10px;
+  }
+
+  /* Compare modal full screen on mobile */
+  .compare-modal { padding: 0; align-items: flex-end; }
+  .compare-card {
+    border-radius: 12px 12px 0 0;
+    max-height: 90vh;
+  }
+  .compare-grid { grid-template-columns: 1fr; }
+
+  /* Shortcuts modal full screen on mobile */
+  .shortcuts-modal { align-items: flex-end; padding: 0; }
+  .shortcuts-card {
+    border-radius: 12px 12px 0 0;
+    width: 100%; min-width: unset;
+  }
+}
+
+/* Touch-friendly tap highlight removal */
+* { -webkit-tap-highlight-color: transparent; }

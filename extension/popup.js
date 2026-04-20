@@ -115,6 +115,12 @@ const pendingImages = {};
 // Pinned messages per panel: key → [{text}]
 const pinnedMessages = {};
 
+// Last broadcast responses for comparison — cleared before each broadcast
+let lastBroadcastResponses = {};
+
+// Session-level cache — persists across settings navigation
+const sessionCache = {};
+
 function getSystemPrompt(key) {
   const parts = [S.memory, S.personas[key]].filter(Boolean);
   return parts.join('\n\n---\n\n') || '';
@@ -329,9 +335,33 @@ function launch() {
   document.getElementById('mainScreen').style.display  = 'block';
   S.activeTab = sendableKeys()[0] || visibleKeys()[0] || null;
   buildPanels(); bindMain(); setView(S.view);
+
+  if (sessionCache.histories) {
+    allKeys().forEach(key => {
+      if (sessionCache.histories[key]?.length) {
+        S.histories[key] = sessionCache.histories[key];
+        restorePanelHistory(key);
+      }
+    });
+    if (sessionCache.memory && !S.memory) S.memory = sessionCache.memory;
+  }
+}
+
+function restorePanelHistory(key) {
+  const cm = document.getElementById('cm-' + key);
+  if (!cm || !S.histories[key]?.length) return;
+  document.getElementById('es-' + key)?.remove();
+  S.histories[key].forEach(msg => {
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      addBubble(key, msg.role, msg.content);
+    }
+  });
+  cm.scrollTop = cm.scrollHeight;
 }
 
 function goToSettings() {
+  sessionCache.histories = JSON.parse(JSON.stringify(S.histories));
+  sessionCache.memory = S.memory;
   document.getElementById('mainScreen').style.display  = 'none';
   document.getElementById('memDrawer').style.display   = 'none';
   document.getElementById('padDrawer').style.display   = 'none';
@@ -775,7 +805,23 @@ function addRelayedBubble(toKey, fromKey, text) {
 async function broadcastAndRelay(text) {
   const targets = sendableKeys();
   if (!targets.length) { showToast('No active panels'); return; }
+
+  // Hide compare button before new broadcast
+  const cmpBtn = document.getElementById('compareBtn');
+  if (cmpBtn) cmpBtn.style.display = 'none';
+  lastBroadcastResponses = {};
+
   await Promise.allSettled(targets.map(k => send(k, text)));
+
+  // Collect responses for comparison
+  sendableKeys().forEach(k => {
+    const last = [...(S.histories[k] || [])].reverse().find(m => m.role === 'assistant');
+    if (last) lastBroadcastResponses[k] = last.content;
+  });
+  if (Object.keys(lastBroadcastResponses).length >= 2 && cmpBtn) {
+    cmpBtn.style.display = '';
+  }
+
   if (!S.relayOn) return;
   await new Promise(r => setTimeout(r, 400));
   const replies = {};
@@ -1433,6 +1479,62 @@ function bindMain() {
   document.getElementById('shortcutsBtn').addEventListener('click', () => {
     document.getElementById('shortcutsModal').style.display = 'flex';
   });
+  document.getElementById('compareBtn')?.addEventListener('click', openCompareModal);
+  document.getElementById('compareClose')?.addEventListener('click', () => {
+    document.getElementById('compareModal').style.display = 'none';
+  });
+  document.getElementById('compareToPadBtn')?.addEventListener('click', compareResponsesToPad);
+  document.getElementById('compareModal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('compareModal')) {
+      document.getElementById('compareModal').style.display = 'none';
+    }
+  });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function openCompareModal() {
+  const grid = document.getElementById('compareGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const entries = Object.entries(lastBroadcastResponses);
+  const allTexts = entries.map(([, t]) => t);
+
+  entries.forEach(([key, text]) => {
+    const isOllama = S.ollamaKeys.includes(key);
+    const color = isOllama ? '#e8704a' : (AIS[key]?.color || '#888');
+    const name = labelFor(key) || key;
+    const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    const others = allTexts.filter(t => t !== text);
+    const rendered = sentences.map(s => {
+      const snippet = s.slice(0, 30);
+      const isUnique = !others.some(o => o.includes(snippet));
+      return isUnique ? `<mark class="diff-unique">${escapeHtml(s)}</mark>` : escapeHtml(s);
+    }).join(' ');
+
+    const col = document.createElement('div');
+    col.className = 'compare-col';
+    col.innerHTML = `
+      <div class="compare-col-header" style="color:${color}">${escapeHtml(name)}</div>
+      <div class="compare-col-body">${rendered}</div>`;
+    grid.appendChild(col);
+  });
+
+  document.getElementById('compareModal').style.display = 'flex';
+}
+
+function compareResponsesToPad() {
+  const pad = document.getElementById('padText');
+  if (!pad) return;
+  const formatted = Object.entries(lastBroadcastResponses)
+    .map(([k, v]) => `[${labelFor(k) || k}]\n${v}`)
+    .join('\n\n---\n\n');
+  pad.value += (pad.value ? '\n\n' : '') + '=== Response Comparison ===\n\n' + formatted;
+  document.getElementById('padDrawer').style.display = 'flex';
+  document.getElementById('compareModal').style.display = 'none';
+  showToast('Responses sent to pad');
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
