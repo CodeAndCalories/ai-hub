@@ -155,6 +155,9 @@ code { font-family: monospace; font-size: 11px; color: #666; background: var(--b
 .sinput:focus { border-color: var(--border2); color: var(--text); }
 .sinput::placeholder { color: #2a2a2a; }
 .shint { font-size: 11px; color: #2a2a2a; margin-top: 6px; line-height: 1.5; }
+.memstore-setup-promo { font-size: 11px; color: #333; margin-top: 4px; line-height: 1.6; }
+.memstore-setup-promo a { color: #7c6aff; text-decoration: none; }
+.memstore-setup-promo a:hover { text-decoration: underline; }
 
 /* ── SECURITY NOTE ───────────────────────────────────────────── */
 .security-note {
