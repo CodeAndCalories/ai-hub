@@ -187,6 +187,9 @@ const BS = { running: false, rounds: 1, topic: '', lastReplies: {} };
 // Pending images per panel: key → [{base64, mimeType}]
 const pendingImages = {};
 
+// Last broadcast responses for comparison — cleared before each broadcast
+let lastBroadcastResponses = {};
+
 // Pinned messages per panel: key → [{text, label}]
 const pinnedMessages = {};
 
@@ -341,10 +344,45 @@ function launch() {
   document.getElementById('mainScreen').style.display = 'flex';
   S.activeTab = sendableKeys()[0] || visibleKeys()[0] || null;
   buildPanels(); bindMain(); setView(S.view);
+
+  try {
+    const saved = sessionStorage.getItem('aihub_session_histories');
+    const savedModes = sessionStorage.getItem('aihub_session_modes');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      ALL_KEYS.forEach(key => {
+        if (parsed[key]?.length) {
+          S.histories[key] = parsed[key];
+          restorePanelHistory(key);
+        }
+      });
+    }
+    const savedMem = sessionStorage.getItem('aihub_session_memory');
+    if (savedMem && !S.memory) S.memory = savedMem;
+  } catch(_) {}
+
+  if (window.innerWidth <= 768) setView(1);
   applyTemplateParam();
 }
 
+function restorePanelHistory(key) {
+  const cm = document.getElementById('cm-' + key);
+  if (!cm || !S.histories[key]?.length) return;
+  document.getElementById('es-' + key)?.remove();
+  S.histories[key].forEach(msg => {
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      addBubble(key, msg.role, msg.content);
+    }
+  });
+  cm.scrollTop = cm.scrollHeight;
+}
+
 function goToSettings() {
+  try {
+    sessionStorage.setItem('aihub_session_histories', JSON.stringify(S.histories));
+    sessionStorage.setItem('aihub_session_memory', S.memory);
+    sessionStorage.setItem('aihub_session_modes', JSON.stringify(S.modes));
+  } catch(_) {}
   document.getElementById('mainScreen').style.display = 'none';
   document.getElementById('memDrawer').style.display = 'none';
   document.getElementById('padDrawer').style.display = 'none';
@@ -683,6 +721,11 @@ async function broadcastAndRelay(text) {
   const targets = sendableKeys();
   if (!targets.length) { showToast('No active panels'); return; }
 
+  // Hide compare button before new broadcast
+  const cmpBtn = document.getElementById('compareBtn');
+  if (cmpBtn) cmpBtn.style.display = 'none';
+  lastBroadcastResponses = {};
+
   // Demo mode — fire demo responses for each panel and stop
   if (DEMO_MODE) { targets.forEach(k => sendDemoMessage(k, text)); return; }
 
@@ -690,6 +733,15 @@ async function broadcastAndRelay(text) {
   document.getElementById('conflictBanner').style.display = 'none';
 
   await Promise.allSettled(targets.map(k => send(k, text)));
+
+  // Collect responses for comparison
+  sendableKeys().forEach(k => {
+    const last = [...(S.histories[k] || [])].reverse().find(m => m.role === 'assistant');
+    if (last) lastBroadcastResponses[k] = last.content;
+  });
+  if (Object.keys(lastBroadcastResponses).length >= 2 && cmpBtn) {
+    cmpBtn.style.display = '';
+  }
 
   // Fire-and-forget conflict detection (≥2 real API panels, never blocks UI)
   const apiTargets = targets.filter(k => S.modes[k] === 'api' && (k === 'ollama' ? S.ollamaOn : !!S.apiKeys[k]));
@@ -1490,7 +1542,14 @@ async function startBrainstorm() {
   setBrainstormStatus('Round 1…');
   addRoundHeader(1);
   await Promise.all(targets.map(async key => {
-    const prompt = `Generate 3-5 creative, distinct ideas for: ${topic}\nBe specific and practical. Avoid obvious answers.`;
+    const prompt = `You are participating in a structured brainstorm with other AI models on this topic: "${topic}"
+
+Generate 3-5 genuinely creative, distinct ideas.
+Rules:
+- Be specific and concrete, not vague
+- Avoid the most obvious answers
+- Each idea should be meaningfully different from the others
+- Format as numbered list with a bold title and 1-2 sentence explanation per idea`;
     S.histories[key].push({ role: 'user', content: prompt });
     addDebateBubble(key, 'user', prompt, 1);
     const reply = await callAI(key);
@@ -1511,7 +1570,18 @@ async function startBrainstorm() {
         .filter(([k]) => k !== key)
         .map(([k, r]) => `${labelFor(k)}: "${r}"`)
         .join('\n\n');
-      const prompt = `Here are ideas from other AIs:\n\n${others}\n\nBuild on the strongest ideas. Combine concepts from different responses. Add what's missing.`;
+      const prompt = `You are in round 2 of a brainstorm on: "${topic}"
+
+Here is what other AI models suggested in round 1:
+${others}
+
+Your task:
+1. Identify the 1-2 strongest ideas from above
+2. Combine or extend them in a new way the original author didn't consider
+3. Add 1-2 completely new ideas that fill gaps nobody covered yet
+4. Be specific — no generic "you could also..." additions
+
+Format as numbered list with bold titles.`;
       S.histories[key].push({ role: 'user', content: prompt });
       const reply = await callAI(key);
       if (reply) {
@@ -1531,7 +1601,18 @@ async function startBrainstorm() {
       const allR2 = Object.entries(round2)
         .map(([k, r]) => `${labelFor(k)}: "${r}"`)
         .join('\n\n');
-      const prompt = `Here is the refined thinking so far:\n\n${allR2}\n\nSynthesize into a final recommended approach. Be concrete and actionable.`;
+      const prompt = `Final round brainstorm on: "${topic}"
+
+All ideas generated so far:
+${allR2}
+
+Synthesize into a FINAL RECOMMENDATION:
+1. The single strongest idea (explain why)
+2. How to actually execute it in the next 7 days
+3. The biggest risk and how to mitigate it
+4. One unconventional twist that could make it 10x better
+
+Be decisive and specific. This is the action plan.`;
       S.histories[key].push({ role: 'user', content: prompt });
       const reply = await callAI(key);
       if (reply) {
@@ -1560,7 +1641,24 @@ async function summarizeBrainstorm() {
     return `${labelFor(key)}:\n${msgs.join('\n')}`;
   }).join('\n\n---\n\n');
 
-  const prompt = `Brainstorm topic: "${BS.topic}"\n\n${allResponses}\n\nSynthesize these ideas into a clear, prioritized action plan. Remove duplicates. Keep only the most actionable suggestions.`;
+  const prompt = `Here is a complete brainstorm on: "${BS.topic}"
+
+${allResponses}
+
+Create a structured action plan:
+## Top 3 Ideas (ranked)
+[rank with brief reasoning]
+
+## Recommended Starting Point
+[single most actionable idea with first 3 steps]
+
+## What to Avoid
+[ideas that sound good but have hidden problems]
+
+## The Wildcard
+[most unconventional idea worth considering]
+
+Keep it concise and actionable.`;
   const sk = targets[0];
 
   try {
@@ -2179,6 +2277,62 @@ function bindMain() {
   document.getElementById('shortcutsBtn').addEventListener('click', () => {
     document.getElementById('shortcutsModal').style.display = 'flex';
   });
+  document.getElementById('compareBtn')?.addEventListener('click', openCompareModal);
+  document.getElementById('compareClose')?.addEventListener('click', () => {
+    document.getElementById('compareModal').style.display = 'none';
+  });
+  document.getElementById('compareToPadBtn')?.addEventListener('click', compareResponsesToPad);
+  document.getElementById('compareModal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('compareModal')) {
+      document.getElementById('compareModal').style.display = 'none';
+    }
+  });
+}
+
+function openCompareModal() {
+  const grid = document.getElementById('compareGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const entries = Object.entries(lastBroadcastResponses);
+  const allTexts = entries.map(([, t]) => t);
+
+  entries.forEach(([key, text]) => {
+    const ai = AIS[key] || {};
+    const color = ai.color || '#888';
+    const name = ai.name || key;
+    const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    const others = allTexts.filter(t => t !== text);
+    const rendered = sentences.map(s => {
+      const snippet = s.slice(0, 30);
+      const isUnique = !others.some(o => o.includes(snippet));
+      return isUnique ? `<mark class="diff-unique">${escapeHtml(s)}</mark>` : escapeHtml(s);
+    }).join(' ');
+
+    const col = document.createElement('div');
+    col.className = 'compare-col';
+    col.innerHTML = `
+      <div class="compare-col-header" style="color:${color}">${escapeHtml(name)}</div>
+      <div class="compare-col-body">${rendered}</div>`;
+    grid.appendChild(col);
+  });
+
+  document.getElementById('compareModal').style.display = 'flex';
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function compareResponsesToPad() {
+  const pad = document.getElementById('padText');
+  if (!pad) return;
+  const formatted = Object.entries(lastBroadcastResponses)
+    .map(([k, v]) => `[${AIS[k]?.name || k}]\n${v}`)
+    .join('\n\n---\n\n');
+  pad.value += (pad.value ? '\n\n' : '') + '=== Response Comparison ===\n\n' + formatted;
+  document.getElementById('padDrawer').style.display = 'flex';
+  document.getElementById('compareModal').style.display = 'none';
+  showToast('Responses sent to pad');
 }
 
 function showToast(msg) {
@@ -2469,12 +2623,13 @@ function initTheme() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  if (window.innerWidth <= 768) S.view = 1;
   // Check for shared session in URL hash
   if (location.hash.startsWith('#shared=')) {
     if (loadSharedSession()) return;
   }
   const d = store.get(['view', 'modes', 'memLabel', 'ollamaOn', 'ollamaModel']);
-  if (d.view) S.view = d.view;
+  if (d.view && window.innerWidth > 768) S.view = d.view;
   buildSetup({ modes: d.modes, memoryLabel: d.memLabel, ollamaOn: d.ollamaOn, ollamaModel: d.ollamaModel });
   detectOllamaOnLoad(d.ollamaOn);
 });
