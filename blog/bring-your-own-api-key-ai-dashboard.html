@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Best Bring-Your-Own-API-Key AI Dashboard (Free &amp; Open Source)</title>
+  <meta name="description" content="AI Hub lets you use ChatGPT, Claude, Gemini and Grok with your own API keys. No markup, no middleman, open source."/>
+  <meta property="og:title" content="The Best Bring-Your-Own-API-Key AI Dashboard (Free &amp; Open Source)"/>
+  <meta property="og:description" content="AI Hub lets you use ChatGPT, Claude, Gemini and Grok with your own API keys. No markup, no middleman, open source."/>
+  <meta property="og:url" content="https://aihubdash.com/blog/bring-your-own-api-key-ai-dashboard.html"/>
+  <meta property="og:type" content="article"/>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
+  <link rel="stylesheet" href="blog.css"/>
+</head>
+<body>
+  <nav class="blog-nav">
+    <a href="https://aihubdash.com" class="blog-nav-logo">AI Hub</a>
+    <div class="blog-nav-right">
+      <a href="/blog/" class="blog-nav-link">← Blog</a>
+      <a href="https://aihubdash.com/dashboard/" class="blog-nav-cta">Try Dashboard →</a>
+    </div>
+  </nav>
+
+  <article>
+    <div class="blog-hero">
+      <span class="blog-category">Product Guide</span>
+      <h1>The Best BYOK (Bring Your Own Key) AI Dashboard</h1>
+      <div class="blog-meta">
+        <span>3 min read</span>
+        <span>·</span>
+        <span>AI Hub</span>
+      </div>
+    </div>
+
+    <div class="blog-body">
+      <p>There's a category of AI tools that charges a monthly subscription, bundles API access into that fee, and marks up your actual AI usage in the process. You pay $20/month, they buy API credits at wholesale rates, pocket the difference, and call it a product.</p>
+
+      <p>BYOK (bring your own key) tools work differently. You connect your own API keys from each provider. The tool is just an interface — the API calls go directly from your browser to OpenAI, Anthropic, or Google. No middleman taking a percentage. No markup. You pay providers exactly what they charge, nothing more.</p>
+
+      <p>For anyone who values both cost efficiency and data privacy, BYOK is the only architecture that makes sense for serious AI use.</p>
+
+      <h2>Why BYOK Matters</h2>
+
+      <p>The practical implications of BYOK go beyond just cost:</p>
+
+      <p><strong>No markup on API costs.</strong> When a subscription service bundles API access, they have to charge enough to cover their own API costs plus margin. With your own keys, you pay the exact same rate as any direct API customer — often a fraction of the subscription equivalent.</p>
+
+      <p><strong>Your keys, your data.</strong> When you use a subscription multi-AI tool, your conversations flow through their servers. With BYOK, your prompts go from your browser directly to the AI provider. The dashboard tool never sees your conversation content.</p>
+
+      <p><strong>Access to every model the provider releases.</strong> Subscription tools decide which models to support and when to add new ones. With your own API key, you have access to every model the provider exposes through their API — including new releases — without waiting for the dashboard to catch up.</p>
+
+      <p><strong>No rate limiting by the dashboard tool.</strong> Subscription services manage shared API quotas across all their users. With your own key, your rate limits are determined entirely by your agreement with the provider — not by how many other users are hitting the same shared pool at the same time.</p>
+
+      <h2>What AI Hub Does With Your Keys</h2>
+
+      <p>AI Hub is built on a specific architectural principle: your API keys never leave your browser.</p>
+
+      <p>When you paste an API key into AI Hub's setup, it's stored in your browser's local storage — the same place websites store preferences and session data. It stays there, on your device. When you send a message, AI Hub makes the API call directly from your browser to the provider (OpenAI, Anthropic, Google, or xAI). The request goes browser → provider, with no AI Hub server in the middle.</p>
+
+      <p>This isn't just a privacy claim — it's verifiable. AI Hub is open source on GitHub. You can read the source code and confirm that there's no backend server receiving your keys or conversation content. The architecture makes it structurally impossible for AI Hub to log your conversations, because AI Hub's servers are never in the request path.</p>
+
+      <h2>Supported Providers</h2>
+
+      <p>AI Hub currently supports direct API connections to:</p>
+
+      <ul>
+        <li><strong>OpenAI</strong> — GPT-4o, GPT-4o mini, and other models in the OpenAI lineup. Keys available at platform.openai.com.</li>
+        <li><strong>Anthropic</strong> — Claude 3.5 Sonnet, Claude 3 Haiku, and the full Claude model family. Keys available at console.anthropic.com.</li>
+        <li><strong>Google</strong> — Gemini 1.5 Pro, Gemini 1.5 Flash, and other Gemini models. Free tier available — no credit card required. Keys at aistudio.google.com.</li>
+        <li><strong>xAI</strong> — Grok models. Keys available at console.x.ai.</li>
+        <li><strong>Ollama</strong> — Local models including Llama 3, Mistral, Phi-3, and anything else you've pulled. No key needed — just run Ollama locally and AI Hub connects to it automatically.</li>
+      </ul>
+
+      <p>All providers can be active simultaneously. You can broadcast a single prompt to all of them at once, or use them in individual panels — whatever workflow suits the task.</p>
+
+      <h2>Getting Started in 2 Minutes</h2>
+
+      <p>The fastest path to a working BYOK setup uses Gemini's free tier, which requires no credit card and takes about two minutes to configure:</p>
+
+      <ol>
+        <li>Go to <strong>aistudio.google.com</strong> and sign in with any Google account.</li>
+        <li>Click <strong>Get API Key</strong> in the left sidebar. Create a new key — it's free and the free tier quota is generous for most use cases.</li>
+        <li>Copy your key.</li>
+        <li>Open <strong>aihubdash.com/dashboard/</strong> — no account or signup required.</li>
+        <li>In the setup panel, paste your Gemini key into the Google field.</li>
+        <li>Click <strong>Launch</strong>. You're in.</li>
+      </ol>
+
+      <p>From here, add additional provider keys whenever you want. Each one adds a new panel to your dashboard. You can run 2, 3, 4, or more models simultaneously — broadcasting the same prompt to all of them and reading their responses side by side.</p>
+
+      <p>If you want to add local models, install Ollama separately (free at ollama.com), pull a model with <code>ollama pull llama3</code>, and AI Hub will detect it automatically when you enable Ollama in setup.</p>
+
+      <h2>Try It Free</h2>
+
+      <p>No subscription, no account, no markup. Your keys connect directly to each provider, and the dashboard is free to use indefinitely.</p>
+
+      <div class="blog-related">
+        <h3>Related</h3>
+        <ul>
+          <li><a href="use-multiple-ai-without-subscription.html">Use Multiple AIs Without $60+/Month</a></li>
+          <li><a href="how-to-use-ollama-with-chatgpt-claude.html">How to Use Ollama With ChatGPT and Claude</a></li>
+        </ul>
+      </div>
+
+      <div class="blog-cta">
+        <h3>Try AI Hub Free</h3>
+        <p>Connect your own API keys to ChatGPT, Claude, Gemini, and Grok — all in one dashboard, no middleman, no markup, no account required.</p>
+        <a href="https://aihubdash.com/dashboard/" class="blog-cta-btn">Open Dashboard — No Signup Needed →</a>
+        <p class="blog-cta-sub">Free · No account · Your API keys stay in your browser</p>
+      </div>
+    </div>
+  </article>
+
+  <footer class="blog-footer">
+    <span>AI Hub · aihubdash.com</span>
+    <div>
+      <a href="https://aihubdash.com">Home</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://memstore.dev">Memstore</a>
+    </div>
+  </footer>
+</body>
+</html>
