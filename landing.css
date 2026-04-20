@@ -197,15 +197,31 @@ nav {
   white-space: nowrap;
 }
 
-.memstore-callout { border-left: 3px solid var(--accent); }
-.memstore-badge {
-  display: flex; align-items: center; gap: 14px; flex-shrink: 0;
-  background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: var(--radius); padding: 18px 22px;
-}
-.memstore-badge-icon { font-size: 28px; }
-.memstore-badge-title { font-size: 15px; font-weight: 600; color: #fff; }
-.memstore-badge-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.memstore-section { padding: 80px 0; border-top: 1px solid #161616; border-bottom: 1px solid #161616; background: #080810; }
+.memstore-inner { max-width: 1000px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
+.memstore-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #7c6aff; background: #0e0e1e; border: 1px solid #2a2a4a; border-radius: 20px; padding: 4px 12px; margin-bottom: 20px; }
+.memstore-dot { width: 6px; height: 6px; border-radius: 50%; background: #7c6aff; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.memstore-section h2 { font-size: 28px; font-weight: 500; color: #e0e0e0; margin-bottom: 14px; line-height: 1.3; }
+.memstore-section p { font-size: 14px; color: #666; line-height: 1.7; margin-bottom: 24px; }
+.memstore-tiers { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.memstore-tier { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #0e0e0e; border: 1px solid #1a1a1a; border-radius: 6px; font-size: 12px; }
+.memstore-tier.highlight { border-color: #2a2a4a; background: #0e0e1a; }
+.tier-name { color: #ccc; font-weight: 500; }
+.tier-detail { color: #444; }
+.memstore-tier.highlight .tier-name { color: #9c8aff; }
+.memstore-tier.highlight .tier-detail { color: #666; }
+.memstore-cta { display: inline-block; background: #7c6aff; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 7px; font-size: 13px; font-weight: 500; transition: opacity 0.15s; margin-bottom: 8px; }
+.memstore-cta:hover { opacity: 0.88; }
+.memstore-sub { font-size: 11px; color: #333; margin: 6px 0 0; }
+.memstore-flow { background: #0e0e0e; border: 1px solid #1a1a1a; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 4px; }
+.flow-step { display: flex; align-items: flex-start; gap: 12px; }
+.flow-icon { width: 24px; height: 24px; border-radius: 50%; background: #1a1a2a; border: 1px solid #2a2a4a; color: #7c6aff; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.flow-text { display: flex; flex-direction: column; gap: 2px; padding-top: 3px; }
+.flow-text strong { font-size: 13px; color: #ccc; font-weight: 500; }
+.flow-text span { font-size: 11px; color: #444; }
+.flow-arrow { font-size: 12px; color: #222; padding-left: 8px; margin: 2px 0; }
+@media (max-width: 768px) { .memstore-inner { grid-template-columns: 1fr; gap: 32px; } }
 
 /* ── COMPARISON TABLE ──────────────────────────────────────────── */
 .comparison { padding: 80px 0; border-top: 1px solid var(--border); }
