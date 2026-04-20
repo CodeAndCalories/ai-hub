@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>How to Use Ollama With ChatGPT and Claude at the Same Time (Free)</title>
+  <meta name="description" content="Run Llama3 or Mistral locally alongside ChatGPT and Claude in one interface. Step-by-step guide — completely free."/>
+  <meta property="og:title" content="How to Use Ollama With ChatGPT and Claude at the Same Time (Free)"/>
+  <meta property="og:description" content="Run Llama3 or Mistral locally alongside ChatGPT and Claude in one interface. Step-by-step guide — completely free."/>
+  <meta property="og:url" content="https://aihubdash.com/blog/how-to-use-ollama-with-chatgpt-claude.html"/>
+  <meta property="og:type" content="article"/>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
+  <link rel="stylesheet" href="blog.css"/>
+</head>
+<body>
+  <nav class="blog-nav">
+    <a href="https://aihubdash.com" class="blog-nav-logo">AI Hub</a>
+    <div class="blog-nav-right">
+      <a href="/blog/" class="blog-nav-link">← Blog</a>
+      <a href="https://aihubdash.com/dashboard/" class="blog-nav-cta">Try Dashboard →</a>
+    </div>
+  </nav>
+
+  <article>
+    <div class="blog-hero">
+      <span class="blog-category">Tutorial</span>
+      <h1>How to Run Ollama Alongside ChatGPT and Claude — In One Tab</h1>
+      <div class="blog-meta">
+        <span>5 min read</span>
+        <span>·</span>
+        <span>AI Hub</span>
+      </div>
+    </div>
+
+    <div class="blog-body">
+      <p>Ollama is one of the best tools in the AI ecosystem right now. It lets you run powerful open-source models — Llama 3, Mistral, Phi-3 — entirely on your own machine, completely free, with no API keys and no data leaving your computer.</p>
+
+      <p>The problem: switching between a local Ollama model and cloud AIs like ChatGPT or Gemini means constant tab-switching, copy-pasting, and context loss. It kills the workflow that makes using multiple models valuable in the first place.</p>
+
+      <p>This guide shows you how to run Ollama alongside cloud AIs in a single interface, comparing their outputs side by side. The whole setup takes about 10 minutes and costs nothing.</p>
+
+      <h2>What You Need</h2>
+
+      <ul>
+        <li><strong>Ollama</strong> — free, open source, available at ollama.com. Runs on Mac, Windows, and Linux.</li>
+        <li><strong>A free API key</strong> — Gemini API via Google AI Studio is completely free to start, no credit card required. OpenAI and Anthropic also offer API access if you prefer GPT-4o or Claude.</li>
+        <li><strong>AI Hub</strong> — free, no account needed, runs in your browser at aihubdash.com/dashboard/.</li>
+      </ul>
+
+      <p>You don't need all three — even just Ollama plus one free Gemini key gives you a powerful local-plus-cloud setup at zero cost.</p>
+
+      <h2>Step 1 — Install Ollama and Pull a Model</h2>
+
+      <p>Download Ollama from <strong>ollama.com</strong> and run the installer. Once installed, open a terminal and pull your first model:</p>
+
+      <pre><code>ollama pull llama3</code></pre>
+
+      <p>This downloads Meta's Llama 3 (8B parameter version by default — about 4.7GB). It's a strong general-purpose model that handles most everyday tasks well. If you want alternatives:</p>
+
+      <pre><code>ollama pull mistral     # Mistral 7B — fast, efficient, good at instruction following
+ollama pull phi3        # Microsoft Phi-3 — smaller, very fast, surprisingly capable</code></pre>
+
+      <p>After pulling, start the Ollama server:</p>
+
+      <pre><code>ollama serve</code></pre>
+
+      <p>This runs Ollama as a local API server on <code>http://localhost:11434</code>. Keep this terminal window open while you're using it. On Mac, Ollama also runs as a menu bar app automatically after installation — in that case you may not need to run <code>ollama serve</code> manually.</p>
+
+      <p>To verify it's running, visit <code>http://localhost:11434</code> in your browser. You should see a plain text response confirming Ollama is active.</p>
+
+      <h2>Step 2 — Open AI Hub and Connect Ollama</h2>
+
+      <p>Open <strong>aihubdash.com/dashboard/</strong> in your browser. When the setup panel appears:</p>
+
+      <ol>
+        <li>Find the <strong>Ollama</strong> section and toggle it <strong>On</strong>.</li>
+        <li>Click <strong>Detect Models</strong> — AI Hub will query your local Ollama server and automatically find the models you've pulled (like llama3).</li>
+        <li>Select which models you want active. Llama 3 will appear in the list if you pulled it in Step 1.</li>
+      </ol>
+
+      <p>AI Hub connects directly to your localhost — no data is sent to any server. Your local model conversations stay entirely on your machine.</p>
+
+      <h2>Step 3 — Add a Cloud AI Alongside It</h2>
+
+      <p>Now add a cloud model to run in parallel. The easiest free option:</p>
+
+      <ol>
+        <li>Go to <strong>aistudio.google.com</strong> and sign in with a Google account.</li>
+        <li>Click <strong>Get API Key</strong> — it's free, and the free tier is generous enough for most use.</li>
+        <li>Copy your key and paste it into the Gemini field in AI Hub's setup panel.</li>
+      </ol>
+
+      <p>Now you have a local model (Llama 3, running on your machine) and a cloud model (Gemini, running on Google's servers) active at the same time in one interface.</p>
+
+      <p>If you already have OpenAI or Anthropic API keys, you can add those too. The setup is the same — paste the key into the corresponding field.</p>
+
+      <h2>Why Run Both?</h2>
+
+      <p>Local and cloud models have genuinely different strengths, and combining them makes both more useful:</p>
+
+      <p><strong>Local Ollama models are:</strong></p>
+      <ul>
+        <li>Completely free — no API costs, no rate limits</li>
+        <li>Private — your prompts never leave your machine</li>
+        <li>Available offline — no internet required once downloaded</li>
+        <li>Fast for shorter responses — no network latency</li>
+      </ul>
+
+      <p><strong>Cloud models are:</strong></p>
+      <ul>
+        <li>More capable on complex reasoning tasks</li>
+        <li>Better at nuanced writing and instruction following</li>
+        <li>More up-to-date on recent information</li>
+        <li>Don't require GPU hardware to run quickly</li>
+      </ul>
+
+      <p>Together, they cover each other's weaknesses. Use local for quick iterations, sensitive data you don't want sent to a third party, or when you're offline. Use cloud for the tasks that need more reasoning depth.</p>
+
+      <h2>Example Workflow</h2>
+
+      <p>Here's a practical pattern that works well for coding tasks:</p>
+
+      <p>Broadcast a question like "How should I structure error handling for async API calls in this Node.js function?" to both Llama 3 (local) and Gemini (cloud) simultaneously.</p>
+
+      <p>Llama 3 will often give you a fast, workable first answer — a concrete pattern you can implement immediately. Gemini will typically give a deeper response that explains the tradeoffs between approaches, or catches edge cases the local model missed.</p>
+
+      <p>Reading both side by side takes 30 seconds and gives you more signal than either model alone. You're not choosing between them — you're using them as two different angles on the same problem.</p>
+
+      <p>The same pattern works for writing, research, and brainstorming. Local for speed and privacy; cloud for depth. Together in one tab with no switching required.</p>
+
+      <div class="blog-related">
+        <h3>Related</h3>
+        <ul>
+          <li><a href="chatgpt-vs-claude-vs-gemini-comparison.html">ChatGPT vs Claude vs Gemini Comparison</a></li>
+          <li><a href="bring-your-own-api-key-ai-dashboard.html">The Best BYOK AI Dashboard</a></li>
+        </ul>
+      </div>
+
+      <div class="blog-cta">
+        <h3>Try AI Hub Free</h3>
+        <p>Connect Ollama and cloud AIs in one dashboard — compare outputs side by side, broadcast to all models at once, no subscriptions needed.</p>
+        <a href="https://aihubdash.com/dashboard/" class="blog-cta-btn">Open Dashboard — No Signup Needed →</a>
+        <p class="blog-cta-sub">Free · No account · Your API keys stay in your browser</p>
+      </div>
+    </div>
+  </article>
+
+  <footer class="blog-footer">
+    <span>AI Hub · aihubdash.com</span>
+    <div>
+      <a href="https://aihubdash.com">Home</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://memstore.dev">Memstore</a>
+    </div>
+  </footer>
+</body>
+</html>

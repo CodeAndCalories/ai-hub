@@ -57,6 +57,8 @@ nav {
   color: var(--text); text-decoration: none; transition: all 0.15s;
 }
 .nav-cta:hover { border-color: #444; background: #1e1e1e; }
+.nav-blog-link { font-size: 13px; color: #666; text-decoration: none; transition: color 0.15s; }
+.nav-blog-link:hover { color: #aaa; }
 
 /* ── HERO ──────────────────────────────────────────────────────── */
 .hero { padding: 60px 0 90px; }
