@@ -214,7 +214,7 @@ function buildSetup(prefill) {
       slot.className = 'ollama-slot';
       slot.innerHTML = `
         <span class="slot-label">model ${i+1}</span>
-        <input class="slot-input" data-idx="${i}" value="${model}" placeholder="llama3, mistral, phi3..."/>
+        <input class="slot-input" data-idx="${i}" value="${escapeHtml(model)}" placeholder="llama3, mistral, phi3..."/>
         ${S.ollamaSlots.length > 1 ? `<button class="slot-remove" data-idx="${i}">✕</button>` : ''}
       `;
       c.appendChild(slot);
@@ -382,7 +382,7 @@ function buildPanels() {
     if (!mode || mode === 'off') return;
     const isOllama = S.ollamaKeys.includes(key);
     const ai       = isOllama ? null : AIS[key];
-    const name     = isOllama ? `Ollama · ${S.ollamaModels[key]}` : ai.name;
+    const name     = isOllama ? `Ollama · ${escapeHtml(S.ollamaModels[key])}` : ai.name;
     const color    = isOllama ? '#e8704a' : ai.color;
     const hasKey   = isOllama ? S.ollamaOn : (mode === 'api' && !!S.apiKeys[key]);
 
@@ -860,7 +860,11 @@ function addBubble(key, role, text, images, elapsed) {
     bubble.appendChild(imgRow);
     if (text) { const t = document.createElement('div'); t.textContent = text; bubble.appendChild(t); }
   } else if (role === 'assistant' && typeof marked !== 'undefined') {
-    bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text);
+    if (typeof DOMPurify !== 'undefined') {
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(text));
+    } else {
+      bubble.textContent = text;
+    }
   } else {
     bubble.textContent = text;
   }
@@ -944,7 +948,7 @@ function renderPinnedSection(key) {
   pins.forEach((pin, i) => {
     const item = document.createElement('div');
     item.className = 'pinned-item';
-    item.innerHTML = `<span class="pinned-text">${pin.text.slice(0, 100)}${pin.text.length > 100 ? '…' : ''}</span><button class="pinned-rm">✕</button>`;
+    item.innerHTML = `<span class="pinned-text">${escapeHtml(pin.text.slice(0, 100))}${pin.text.length > 100 ? '…' : ''}</span><button class="pinned-rm">✕</button>`;
     item.querySelector('.pinned-rm').addEventListener('click', () => { pinnedMessages[key].splice(i, 1); renderPinnedSection(key); });
     list.appendChild(item);
   });
@@ -1073,7 +1077,7 @@ function renderTemplates() {
   names.forEach(name => {
     const chip = document.createElement('div');
     chip.className = 'tpl-chip';
-    chip.innerHTML = `<span>${name}</span><button class="tpl-del">✕</button>`;
+    chip.innerHTML = `<span>${escapeHtml(name)}</span><button class="tpl-del">✕</button>`;
     chip.querySelector('span').addEventListener('click', () => {
       S.memory = S.templates[name];
       document.getElementById('memText').value = S.memory;
@@ -1343,7 +1347,7 @@ function addDebateBubble(key, role, text, round) {
   wrap.className = `msg ${role} debate-round r${round}`;
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  if (role === 'assistant' && typeof marked !== 'undefined') { bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text); } else { bubble.textContent = text; }
+  if (role === 'assistant' && typeof marked !== 'undefined') { if (typeof DOMPurify !== 'undefined') { bubble.innerHTML = DOMPurify.sanitize(marked.parse(text)); } else { bubble.textContent = text; } } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   if (role === 'assistant') {
     const acts = document.createElement('div');
@@ -1373,7 +1377,7 @@ function addSummaryBubble(key, text) {
   wrap.className = 'msg assistant summary-msg';
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  if (typeof marked !== 'undefined') { bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text); } else { bubble.textContent = text; }
+  if (typeof marked !== 'undefined') { if (typeof DOMPurify !== 'undefined') { bubble.innerHTML = DOMPurify.sanitize(marked.parse(text)); } else { bubble.textContent = text; } } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   const acts = document.createElement('div');
   acts.className = 'msg-actions';

@@ -39,7 +39,7 @@
         </div>
       </div>
       <div id="ollamaKeyRow">
-        <p class="ollama-info">Runs AI models locally on your machine. Needs <a href="https://ollama.com/download" target="_blank">Ollama</a> installed. No API key — completely free &amp; private.</p>
+        <p class="ollama-info">Runs AI models locally on your machine. Needs <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Ollama</a> installed. No API key — completely free &amp; private.</p>
         <div class="ollama-model-row">
           <label class="slabel">model</label>
           <div style="display:flex;gap:8px;align-items:center;">
@@ -57,17 +57,17 @@
       <input type="text" id="memLabel" class="sinput" placeholder="e.g. work, personal, coding..."/>
       <p class="shint">Saves your memory context by name in this browser across sessions.</p>
       <p class="shint" style="margin-top:4px;">Want memory that persists across devices?
-        <a href="https://memstore.dev" target="_blank" style="color:#7c6aff;text-decoration:none;">Connect Memstore →</a>
+        <a href="https://memstore.dev" target="_blank" rel="noopener noreferrer" style="color:#7c6aff;text-decoration:none;">Connect Memstore →</a>
       </p>
       <div class="memstore-setup-promo">
-        <span>Free tier · No credit card · <a href="https://memstore.dev" target="_blank">Get your key in 30 seconds →</a></span>
+        <span>Free tier · No credit card · <a href="https://memstore.dev" target="_blank" rel="noopener noreferrer">Get your key in 30 seconds →</a></span>
       </div>
     </div>
     <div class="security-note">
       <span class="security-icon">🔒</span>
       <span>Your API keys never leave your browser. AI Hub has no server.</span>
     </div>
-    <p style="text-align:center;font-size:11px;color:#333;margin-top:6px;">Persistent memory powered by <a href="https://memstore.dev" target="_blank" style="color:#444;text-decoration:none;">memstore.dev</a></p>
+    <p style="text-align:center;font-size:11px;color:#333;margin-top:6px;">Persistent memory powered by <a href="https://memstore.dev" target="_blank" rel="noopener noreferrer" style="color:#444;text-decoration:none;">memstore.dev</a></p>
     <button class="go-btn" id="goBtn">Launch AI Hub</button>
     <button class="demo-btn" id="demoBtn">Try demo — no API keys needed</button>
   </div>
@@ -243,7 +243,7 @@
         <input type="password" id="memstoreKeyInput" class="memstore-key-input" placeholder="am_live_..." autocomplete="off"/>
         <div class="memstore-row">
           <button class="db-btn" id="memstoreConnectBtn">Connect</button>
-          <a href="https://memstore.dev" target="_blank" class="memstore-link">Free persistent memory for AI agents → memstore.dev</a>
+          <a href="https://memstore.dev" target="_blank" rel="noopener noreferrer" class="memstore-link">Free persistent memory for AI agents → memstore.dev</a>
         </div>
       </div>
 
@@ -426,9 +426,9 @@
   <div class="workflows-list" id="workflowsList"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js" integrity="sha384-0d+Gr7vM4Drod8E3hXKgciWJSWbjD/opKLLygI9ktiWbuvlDwQLzU46wJ9s5gsp7" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" integrity="sha384-cwS6YdhLI7XS60eoDiC+egV0qHp8zI+Cms46R0nbn8JrmoAzV9uFL60etMZhAnSu" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@14.0.0/marked.min.js" integrity="sha384-K6kVcQ04tqVGO7RJ+FjMmvM3Xu/hNQQWEqT4ldRAtw/tYLeDoCGKNeKn5mAdq1nK" crossorigin="anonymous"></script>
 <script src="memstore.js"></script>
 <script src="app.js"></script>
 </body>

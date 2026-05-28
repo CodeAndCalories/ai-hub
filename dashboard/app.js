@@ -251,7 +251,7 @@ function buildSetup(prefill) {
       ${key === 'gemini' ? `
       <div class="free-badge-row" id="fbr-gemini" style="opacity:${mode!=='api'?'0.15':'1'}">
         <span class="free-badge">✓ Free tier available</span>
-        <a class="free-badge-link" href="https://aistudio.google.com/app/apikey" target="_blank">Get a free Gemini key in 30 seconds →</a>
+        <a class="free-badge-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get a free Gemini key in 30 seconds →</a>
       </div>` : ''}
     `;
     container.appendChild(row);
@@ -407,7 +407,7 @@ function buildPanels() {
     panel.innerHTML = `
       <div class="ph" id="ph-${key}">
         <div class="ph-dot" style="background:${ai.color}"></div>
-        <span class="ph-name" style="color:${ai.color}">${ai.name}${isOllama ? ` <span style="font-size:11px;color:#666;">${S.ollamaModel}</span>` : ''}</span>
+        <span class="ph-name" style="color:${ai.color}">${ai.name}${isOllama ? ` <span style="font-size:11px;color:#666;">${escapeHtml(S.ollamaModel)}</span>` : ''}</span>
         <span class="ph-badge ${isOllama ? 'ollama' : mode}">${isOllama ? 'local · free' : mode}</span>
         <div class="ph-actions">
           ${mode === 'native'
@@ -790,7 +790,11 @@ function addBubble(key, role, text, images, elapsed) {
       bubble.appendChild(textNode);
     }
   } else if (role === 'assistant' && typeof marked !== 'undefined') {
-    bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text);
+    if (typeof DOMPurify !== 'undefined') {
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(text));
+    } else {
+      bubble.textContent = text;
+    }
   } else {
     bubble.textContent = text;
   }
@@ -910,7 +914,7 @@ function renderPinnedSection(key) {
   pins.forEach((pin, i) => {
     const item = document.createElement('div');
     item.className = 'pinned-item';
-    item.innerHTML = `<span class="pinned-text">${pin.text.slice(0, 120)}${pin.text.length > 120 ? '…' : ''}</span><button class="pinned-rm">✕</button>`;
+    item.innerHTML = `<span class="pinned-text">${escapeHtml(pin.text.slice(0, 120))}${pin.text.length > 120 ? '…' : ''}</span><button class="pinned-rm">✕</button>`;
     item.querySelector('.pinned-rm').addEventListener('click', () => {
       pinnedMessages[key].splice(i, 1);
       renderPinnedSection(key);
@@ -1029,7 +1033,7 @@ function renderTemplates() {
   names.forEach(name => {
     const chip = document.createElement('div');
     chip.className = 'tpl-chip';
-    chip.innerHTML = `<span>${name}</span><button class="tpl-del">✕</button>`;
+    chip.innerHTML = `<span>${escapeHtml(name)}</span><button class="tpl-del">✕</button>`;
     chip.querySelector('span').addEventListener('click', () => {
       S.memory = S.templates[name];
       document.getElementById('memText').value = S.memory;
@@ -1435,7 +1439,7 @@ function addDebateBubble(key, role, text, round) {
   wrap.className = `msg ${role} debate-round r${round}`;
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  if (role === 'assistant' && typeof marked !== 'undefined') { bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text); } else { bubble.textContent = text; }
+  if (role === 'assistant' && typeof marked !== 'undefined') { if (typeof DOMPurify !== 'undefined') { bubble.innerHTML = DOMPurify.sanitize(marked.parse(text)); } else { bubble.textContent = text; } } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   if (role === 'assistant') {
     const acts = document.createElement('div'); acts.className = 'msg-actions';
@@ -1459,7 +1463,7 @@ function addSummaryBubble(key, text) {
   hdr.className = 'round-header'; hdr.textContent = '✦ debate summary';
   const wrap = document.createElement('div'); wrap.className = 'msg assistant summary-msg';
   const bubble = document.createElement('div'); bubble.className = 'bubble';
-  if (typeof marked !== 'undefined') { bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(marked.parse(text)) : marked.parse(text); } else { bubble.textContent = text; }
+  if (typeof marked !== 'undefined') { if (typeof DOMPurify !== 'undefined') { bubble.innerHTML = DOMPurify.sanitize(marked.parse(text)); } else { bubble.textContent = text; } } else { bubble.textContent = text; }
   wrap.appendChild(bubble);
   const acts = document.createElement('div'); acts.className = 'msg-actions';
   const c = document.createElement('button'); c.className = 'ma-btn'; c.textContent = 'copy';
@@ -1883,10 +1887,10 @@ function renderPromptItem(container, p, { canDelete, index, isCommunity } = {}) 
   const textDiv = document.createElement('div');
   textDiv.className = 'prompt-item-text';
   if (isCommunity && p.tags?.length) {
-    const tagsHtml = p.tags.map(t => `<span class="prompt-tag">${t}</span>`).join('');
-    textDiv.innerHTML = `<div class="prompt-item-name">${p.name} ${tagsHtml}</div><div class="prompt-item-preview">${p.text.slice(0, 80)}${p.text.length > 80 ? '…' : ''}</div>`;
+    const tagsHtml = p.tags.map(t => `<span class="prompt-tag">${escapeHtml(t)}</span>`).join('');
+    textDiv.innerHTML = `<div class="prompt-item-name">${escapeHtml(p.name)} ${tagsHtml}</div><div class="prompt-item-preview">${escapeHtml(p.text.slice(0, 80))}${p.text.length > 80 ? '…' : ''}</div>`;
   } else {
-    textDiv.innerHTML = `<div class="prompt-item-name">${p.name}</div><div class="prompt-item-preview">${p.text.slice(0, 80)}${p.text.length > 80 ? '…' : ''}</div>`;
+    textDiv.innerHTML = `<div class="prompt-item-name">${escapeHtml(p.name)}</div><div class="prompt-item-preview">${escapeHtml(p.text.slice(0, 80))}${p.text.length > 80 ? '…' : ''}</div>`;
   }
   const acts = document.createElement('div');
   acts.className = 'prompt-item-acts';
@@ -3070,7 +3074,7 @@ function renderGlobalPinned() {
           <button class="pinned-global-unpin" data-key="${pin.key}" data-idx="${globalIdx}">✕</button>
         </div>
       </div>
-      <div class="pinned-global-text">${(pin.text||'').slice(0,200)}${pin.text&&pin.text.length>200?'…':''}</div>`;
+      <div class="pinned-global-text">${escapeHtml((pin.text||'').slice(0,200))}${pin.text&&pin.text.length>200?'…':''}</div>`;
     item.querySelector('.pinned-global-unpin').addEventListener('click', e => {
       const k = e.target.dataset.key;
       const text = pin.text;
