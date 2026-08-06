@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>404 — Page not found · AI Hub</title>
+  <meta name="description" content="That page moved or never existed. Here's where to go instead on AI Hub."/>
+  <meta name="robots" content="noindex"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" type="image/png" href="/favicon.svg"/>
+  <link rel="stylesheet" href="/landing.css"/>
+  <style>
+    .nf { padding: 90px 0 110px; }
+    .nf-inner { max-width: 640px; }
+    .nf h1 {
+      font-size: 96px; font-weight: 700; line-height: 1;
+      letter-spacing: -0.04em; color: #fff; margin-bottom: 20px;
+    }
+    .nf h2 {
+      font-size: 24px; font-weight: 600; color: var(--text);
+      letter-spacing: -0.01em; margin-bottom: 14px;
+    }
+    .nf p { font-size: 16px; color: var(--text2); line-height: 1.7; margin-bottom: 32px; }
+    .nf-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    @media (max-width: 560px) {
+      .nf { padding: 60px 0 80px; }
+      .nf h1 { font-size: 64px; }
+      .nf h2 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">AI Hub</a>
+    <div class="nav-right">
+      <a href="/blog/" class="nav-blog-link">Blog</a>
+      <a href="/dashboard/" class="nav-cta">Try Demo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- 404 -->
+<section class="nf">
+  <div class="container nf-inner">
+    <h1>404</h1>
+    <h2>That page moved or never existed.</h2>
+    <p>The pages you're looking for may have been reorganized. Here's where to go instead.</p>
+    <div class="nf-links">
+      <a href="/" class="btn-primary">Home</a>
+      <a href="/dashboard/" class="btn-secondary">Dashboard</a>
+      <a href="/blog/" class="btn-secondary">Blog</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container footer-inner">
+    <span class="footer-left">AI Hub · aihubdash.com</span>
+    <div class="footer-links">
+      <a href="/dashboard/">Dashboard</a>
+      <a href="/compare/">Compare</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://memstore.dev" target="_blank" rel="noopener noreferrer">Memstore</a>
+    </div>
+    <span class="footer-right">© <span id="copyrightYear">2025</span> · Powered by your own API keys</span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

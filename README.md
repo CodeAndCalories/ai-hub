@@ -3,8 +3,8 @@ Chat with ChatGPT, Claude, Gemini, Grok, and local Ollama models — all at the 
 
 ## Live
 
-- **Landing page:** https://codeandcalories.github.io/ai-hub/
-- **Dashboard:** https://codeandcalories.github.io/ai-hub/dashboard/
+- **Landing page:** https://aihubdash.com
+- **Dashboard:** https://aihubdash.com/dashboard/
 
 ---
 
