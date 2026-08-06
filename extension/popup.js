@@ -30,10 +30,12 @@ const AIS = {
   gemini: {
     name: 'Gemini', color: '#4285f4', url: 'https://gemini.google.com', placeholder: 'AIza...',
     async call(key, msgs, memory) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+      // Key goes in the x-goog-api-key header, never the query string —
+      // query strings leak into history, referrers, and intermediary logs.
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
       const body = { contents: msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })) };
       if (memory) body.system_instruction = { parts: [{ text: memory }] };
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch(url, { method: 'POST', headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
       return (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
     }
@@ -147,7 +149,7 @@ function initResize() {
   document.addEventListener('mouseup', () => {
     if (!rs.dragging) return;
     rs.dragging = false;
-    chrome.storage.local.set({ aihub_w: document.body.offsetWidth, aihub_h: document.body.offsetHeight });
+    chrome.storage.local.set({ aihub_w: document.body.offsetWidth, aihub_h: document.body.offsetHeight }, storageSetDone('window size'));
   });
 }
 function applySize(w, h) { document.body.style.width = w + 'px'; document.body.style.minHeight = h + 'px'; }
@@ -326,7 +328,7 @@ function launch() {
   chrome.storage.local.set({
     aihub_modes: { ...S.modes }, aihub_memLabel: S.memoryLabel,
     aihub_ollamaOn: S.ollamaOn, aihub_ollamaSlots: S.ollamaSlots
-  });
+  }, storageSetDone('your settings'));
 
   loadMemory(); loadTemplates();
 
@@ -627,7 +629,7 @@ function bindChat(key) {
 function setView(v) {
   S.view = v;
   document.querySelectorAll('.vb').forEach(b => b.classList.toggle('active', parseInt(b.dataset.v) === v));
-  chrome.storage.local.set({ aihub_view: v });
+  chrome.storage.local.set({ aihub_view: v }, storageSetDone('the panel layout'));
   const vk = visibleKeys();
 
   if (v === 4) {
@@ -1190,7 +1192,8 @@ function bindMemstore() {
         const text = results.slice(0, 3).map(m => m.content || m.text || '').filter(Boolean).join('\n');
         if (text) {
           const mt = document.getElementById('memText');
-          mt.value = mt.value ? mt.value + '\n\n--- Recalled from Memstore ---\n' + text : '--- Recalled from Memstore ---\n' + text;
+          const fenced = Memstore.fenceRecalled(text);
+          mt.value = mt.value ? mt.value + '\n\n' + fenced : fenced;
           S.memory = mt.value;
           showToast(`Recalled ${Math.min(results.length, 3)} memories ✓`);
         }
@@ -1447,13 +1450,13 @@ async function callAIVision(key, msgs, systemPrompt, lastText, images) {
     return (await res.json()).content?.[0]?.text || '';
 
   } else if (key === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
     const parts = images.map(img => ({ inline_data: { mime_type: img.mimeType, data: img.base64 } }));
     if (lastText) parts.push({ text: lastText });
     const prevMsgs = msgs.slice(0, -1).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
     const body = { contents: [...prevMsgs, { role: 'user', parts }] };
     if (systemPrompt) body.system_instruction = { parts: [{ text: systemPrompt }] };
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const res = await fetch(url, { method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
     return (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
   }
@@ -1553,6 +1556,19 @@ function showToast(msg) {
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
+// Callback for chrome.storage.local.set — surfaces write failures (quota, etc.)
+// instead of dropping them. Throttled so a full disk can't spam the toast.
+let _lastStorageWarn = 0;
+function storageSetDone(what) {
+  return () => {
+    if (!chrome.runtime.lastError) return;
+    const now = Date.now();
+    if (now - _lastStorageWarn < 8000) return;
+    _lastStorageWarn = now;
+    showToast(`Could not save ${what} — browser storage may be full.`);
+  };
+}
+
 // ── Keyboard Shortcuts ────────────────────────────────────────────────────────
 
 function bindKeyboardShortcuts() {
@@ -1615,7 +1631,7 @@ function loadWorkflows(cb) {
 
 function saveWorkflowsToStorage(workflows) {
   _cachedWorkflows = workflows;
-  chrome.storage.local.set({ aihub_workflows: workflows });
+  chrome.storage.local.set({ aihub_workflows: workflows }, storageSetDone('your workflows'));
 }
 
 function renderWorkflows() {

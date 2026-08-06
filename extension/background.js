@@ -7,6 +7,7 @@ const AI_URLS = {
 
 async function focusOrOpenTab(aiKey) {
   const url = AI_URLS[aiKey];
+  if (!url) return; // unknown key — never open an untargeted tab
   const tabs = await chrome.tabs.query({});
   const existing = tabs.find(t => t.url && t.url.startsWith(url));
   if (existing) {
@@ -28,6 +29,8 @@ async function getTabStatuses() {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // Only accept messages from this extension's own pages.
+  if (sender.id !== chrome.runtime.id) return;
   if (msg.action === 'focusTab') {
     focusOrOpenTab(msg.aiKey).then(() => sendResponse({ ok: true }));
     return true;

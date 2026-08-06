@@ -63,10 +63,12 @@ const AIS = {
     name: 'Gemini', color: '#4285f4', url: 'https://gemini.google.com',
     placeholder: 'AIza...', type: 'cloud',
     async call(key, msgs, memory) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+      // Key goes in the x-goog-api-key header, never the query string —
+      // query strings leak into history, referrers, and intermediary logs.
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
       const body = { contents: msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })) };
       if (memory) body.system_instruction = { parts: [{ text: memory }] };
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch(url, { method: 'POST', headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
       return (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
     }
@@ -894,7 +896,7 @@ function pinMessage(key, text, btn) {
 }
 
 function savePins() {
-  try { localStorage.setItem('aihub_pins', JSON.stringify(pinnedMessages)); } catch(_) {}
+  try { localStorage.setItem('aihub_pins', JSON.stringify(pinnedMessages)); } catch(_) { warnStorageFull(); }
 }
 
 function renderPinnedSection(key) {
@@ -920,7 +922,7 @@ function renderPinnedSection(key) {
   pins.forEach((pin, i) => {
     const item = document.createElement('div');
     item.className = 'pinned-item';
-    item.innerHTML = `<span class="pinned-text">${escapeHtml(pin.text.slice(0, 120))}${pin.text.length > 120 ? '…' : ''}</span><button class="pinned-rm">✕</button>`;
+    item.innerHTML = `<span class="pinned-text">${escapeHtml((pin.text || '').slice(0, 120))}${(pin.text || '').length > 120 ? '…' : ''}</span><button class="pinned-rm">✕</button>`;
     item.querySelector('.pinned-rm').addEventListener('click', () => {
       pinnedMessages[key].splice(i, 1);
       renderPinnedSection(key);
@@ -1001,7 +1003,7 @@ async function autoSummarizeAll() {
   if (summaries.length) {
     S.memory = (S.memory ? S.memory + '\n\n' : '') + '--- Auto-summary ---\n' + summaries.join('\n');
     document.getElementById('memText').value = S.memory;
-    if (S.memoryLabel) { try { localStorage.setItem('aihub5d_mem_' + S.memoryLabel, S.memory); } catch (_) {} }
+    if (S.memoryLabel) { try { localStorage.setItem('aihub5d_mem_' + S.memoryLabel, S.memory); } catch (_) { warnStorageFull(); } }
     setMemStatus('Summaries appended ✓');
   }
 }
@@ -1010,7 +1012,7 @@ async function autoSummarizeOne(key) {
   const s = await summarizeHistory(key); if (!s) return;
   S.memory = (S.memory ? S.memory + '\n' : '') + `[${AIS[key].name} summary]: ${s}`;
   const mt = document.getElementById('memText'); if (mt) mt.value = S.memory;
-  if (S.memoryLabel) { try { localStorage.setItem('aihub5d_mem_' + S.memoryLabel, S.memory); } catch (_) {} }
+  if (S.memoryLabel) { try { localStorage.setItem('aihub5d_mem_' + S.memoryLabel, S.memory); } catch (_) { warnStorageFull(); } }
   setMemStatus(`Auto-saved ${AIS[key].name} summary`);
 }
 
@@ -1029,7 +1031,7 @@ async function summarizeHistory(key) {
 function loadTemplates() {
   try { S.templates = JSON.parse(localStorage.getItem('aihub5d_templates') || '{}'); } catch (_) { S.templates = {}; }
 }
-function saveTemplates() { try { localStorage.setItem('aihub5d_templates', JSON.stringify(S.templates)); } catch (_) {} }
+function saveTemplates() { try { localStorage.setItem('aihub5d_templates', JSON.stringify(S.templates)); } catch (_) { warnStorageFull(); } }
 
 function renderTemplates() {
   const list = document.getElementById('tplList');
@@ -1241,7 +1243,8 @@ function bindMemstore() {
         const text = results.slice(0, 3).map(m => m.content || m.text || '').filter(Boolean).join('\n');
         if (text) {
           const mt = document.getElementById('memText');
-          mt.value = mt.value ? mt.value + '\n\n--- Recalled from Memstore ---\n' + text : '--- Recalled from Memstore ---\n' + text;
+          const fenced = Memstore.fenceRecalled(text);
+          mt.value = mt.value ? mt.value + '\n\n' + fenced : fenced;
           S.memory = mt.value;
           showToast(`Recalled ${Math.min(results.length, 3)} memories ✓`);
         }
@@ -1425,13 +1428,13 @@ async function callAIVision(key, msgs, systemPrompt, lastText, images) {
     return (await res.json()).content?.[0]?.text || '';
 
   } else if (key === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
     const parts = images.map(img => ({ inline_data: { mime_type: img.mimeType, data: img.base64 } }));
     if (lastText) parts.push({ text: lastText });
     const prevMsgs = msgs.slice(0, -1).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
     const body = { contents: [...prevMsgs, { role: 'user', parts }] };
     if (systemPrompt) body.system_instruction = { parts: [{ text: systemPrompt }] };
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const res = await fetch(url, { method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
     return (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
   }
@@ -1884,7 +1887,7 @@ function loadPrompts() {
 }
 
 function savePrompts() {
-  try { localStorage.setItem('aihub_prompts', JSON.stringify(S_prompts)); } catch (_) {}
+  try { localStorage.setItem('aihub_prompts', JSON.stringify(S_prompts)); } catch (_) { warnStorageFull(); }
 }
 
 function renderPromptItem(container, p, { canDelete, index, isCommunity } = {}) {
@@ -2102,7 +2105,10 @@ function loadSharedSession() {
     S.histories[key] = [];
     S.loading[key] = false; S.unread[key] = 0;
   });
-  S.memory = data.memory || '';
+  // Memory is deliberately NOT restored from a shared link. It would flow into
+  // S.memory and then into the system prompt, letting a crafted link inject
+  // instructions that run against the recipient's own API keys.
+  const hadSharedMemory = !!(data.memory && String(data.memory).trim());
 
   // Restore histories from shared data
   Object.entries(data.conversations).forEach(([name, hist]) => {
@@ -2123,6 +2129,8 @@ function loadSharedSession() {
   document.getElementById('broadcastInput').disabled = true;
   document.getElementById('broadcastBtn').style.display = 'none';
   document.getElementById('shareBtn').style.display = 'none';
+
+  if (hadSharedMemory) showToast('Shared memory context was not imported for security.');
 
   return true;
 }
@@ -2351,6 +2359,16 @@ function showToast(msg) {
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+// Surfaces a failed localStorage write instead of dropping it silently.
+// Throttled so a full quota can't turn every keystroke into a toast.
+let _lastStorageWarn = 0;
+function warnStorageFull() {
+  const now = Date.now();
+  if (now - _lastStorageWarn < 8000) return;
+  _lastStorageWarn = now;
+  try { showToast('Could not save — browser storage may be full.'); } catch (_) {}
+}
+
 // ── Keyboard Shortcuts ────────────────────────────────────────────────────────
 
 function bindKeyboardShortcuts() {
@@ -2442,7 +2460,7 @@ function loadWorkflows() {
 }
 
 function saveWorkflowsToStorage(workflows) {
-  try { localStorage.setItem('aihub_workflows', JSON.stringify(workflows)); } catch (_) {}
+  try { localStorage.setItem('aihub_workflows', JSON.stringify(workflows)); } catch (_) { warnStorageFull(); }
 }
 
 function renderWorkflows() {
@@ -2674,7 +2692,7 @@ function trackStats(key, elapsedMs, reply) {
   cumulativeStats[key].messages++;
   cumulativeStats[key].words = (cumulativeStats[key].words || 0) + words;
   cumulativeStats[key].chars = (cumulativeStats[key].chars || 0) + chars;
-  try { localStorage.setItem('aihub_stats', JSON.stringify(cumulativeStats)); } catch(_) {}
+  try { localStorage.setItem('aihub_stats', JSON.stringify(cumulativeStats)); } catch(_) { warnStorageFull(); }
 }
 
 function bindAnalytics() {
