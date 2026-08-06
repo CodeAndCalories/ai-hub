@@ -133,17 +133,24 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="container hero-inner">
-    <h1>One tab.<br>Every AI.</h1>
-    <p class="hero-sub">Stop juggling ChatGPT, Claude, Gemini, and Grok across tabs. AI Hub puts them side by side — compare answers, run structured debates, and build shared memory. Free and open to use.</p>
-    <div class="hero-btns">
-      <a href="./dashboard/index.html" class="btn-primary btn-glow">Try the dashboard →</a>
-      <a href="#demoSection" class="btn-secondary" onclick="document.getElementById('demoSection').scrollIntoView({behavior:'smooth'});return false;">Watch demo ↓</a>
+  <div class="container hero-grid">
+    <div class="hero-inner">
+      <h1>One tab.<br>Every AI.</h1>
+      <p class="hero-sub">Stop juggling ChatGPT, Claude, Gemini, and Grok across tabs. AI Hub puts them side by side — compare answers, run structured debates, and build shared memory. Free and open to use.</p>
+      <div class="hero-btns">
+        <a href="./dashboard/index.html" class="btn-primary btn-glow">Try the dashboard →</a>
+      </div>
+      <div class="trust-badges">
+        <span class="trust-badge">⚡ Free to use</span>
+        <span class="trust-badge">🔒 No account required</span>
+        <span class="trust-badge">🖥 Works in your browser</span>
+      </div>
     </div>
-    <div class="trust-badges">
-      <span class="trust-badge">⚡ Free to use</span>
-      <span class="trust-badge">🔒 No account required</span>
-      <span class="trust-badge">🖥 Works in your browser</span>
+    <div class="hero-shot">
+      <img src="./screenshots/dashboard-4-panel.png"
+           width="2880" height="1800"
+           loading="eager" decoding="async"
+           alt="The AI Hub dashboard in four-panel view: ChatGPT, Claude, Gemini, and Grok each answering the same broadcast question side by side, with their full replies visible."/>
     </div>
   </div>
 </section>
@@ -160,17 +167,6 @@
   <span class="social-sep">·</span>
   <span class="social-item"><span class="social-dot purple"></span>Powered by your own API keys</span>
 </div>
-
-<!-- VIDEO PLACEHOLDER -->
-<section class="video-section">
-  <div class="container">
-    <div class="video-card">
-      <div class="video-play-icon">▶</div>
-      <div class="video-label">Watch the 30-second setup</div>
-      <div class="video-sub">See AI Hub in action before you open it</div>
-    </div>
-  </div>
-</section>
 
 <!-- INTERACTIVE DEMO -->
 <section class="demo-section" id="demoSection">
@@ -222,19 +218,6 @@
         <a href="./dashboard/index.html" class="btn-primary">Try it yourself →</a>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- EMAIL CAPTURE (moved here — right after demo) -->
-<section class="notify-section">
-  <div class="notify-card">
-    <h2>Stay in the loop</h2>
-    <p>Get notified when the Chrome extension hits the Web Store and when new features ship.</p>
-    <form class="notify-form" id="notifyForm">
-      <input type="email" id="notifyEmail" placeholder="your@email.com" class="notify-input"/>
-      <button type="submit" class="notify-btn">Notify me</button>
-    </form>
-    <p class="notify-fine">No spam. Unsubscribe anytime.</p>
   </div>
 </section>
 
@@ -524,6 +507,19 @@
 </section>
 
 
+<!-- EMAIL CAPTURE -->
+<section class="notify-section">
+  <div class="notify-card">
+    <h2>Stay in the loop</h2>
+    <p>Get notified when the Chrome extension hits the Web Store and when new features ship.</p>
+    <form class="notify-form" id="notifyForm">
+      <input type="email" id="notifyEmail" placeholder="your@email.com" class="notify-input"/>
+      <button type="submit" class="notify-btn">Notify me</button>
+    </form>
+    <p class="notify-fine">No spam. Unsubscribe anytime.</p>
+  </div>
+</section>
+
 <!-- FAQ -->
 <section class="faq-section">
   <div class="container">
@@ -702,17 +698,26 @@
     startDemo();
   }
 
-  // Auto-play on scroll via IntersectionObserver
-  const section = document.getElementById('demoSection');
-  if ('IntersectionObserver' in window) {
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { startDemo(); obs.disconnect(); } });
-    }, { threshold: 0.25 });
-    obs.observe(section);
-  } else {
-    // Fallback: start after 1s
-    setTimeout(startDemo, 1000);
+  // Render the finished conversation immediately, so the panels are never empty.
+  // The typed animation is opt-in via the replay button.
+  function renderStatic() {
+    if (demoTimer) clearTimeout(demoTimer);
+    demoPlayed = true;
+    demoStep = DEMO_SCRIPT.length;
+    document.getElementById('demoBroadcastText').textContent = BROADCAST_Q;
+    ['chatgpt','claude','gemini'].forEach(p => {
+      document.getElementById('dm-' + p).innerHTML = '';
+      addUserBubble(p, BROADCAST_Q);
+    });
+    DEMO_SCRIPT.forEach(step => addAIBubble(step.panel, step.msg));
+    ['chatgpt','claude','gemini'].forEach(p => {
+      const msgs = document.getElementById('dm-' + p);
+      msgs.scrollTop = 0;
+    });
+    document.getElementById('demoCta').style.display = 'block';
   }
+
+  renderStatic();
 
   document.getElementById('demoReplayBtn').addEventListener('click', resetDemo);
 })();

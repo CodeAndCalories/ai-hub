@@ -54,6 +54,8 @@ const AIS = {
 
 // Ollama call helper — used by dynamic ollama slots
 async function ollamaCall(msgs, memory, model) {
+  // Hard guard: never touch localhost unless the user turned Ollama on.
+  if (!S.ollamaOn) throw new Error('Ollama is off — turn it on in setup first.');
   const systemMsg = memory ? [{ role: 'system', content: memory }] : [];
   const res = await fetch('http://localhost:11434/api/chat', {
     method: 'POST',
@@ -246,6 +248,8 @@ function buildSetup(prefill) {
 
   document.getElementById('detectModels').addEventListener('click', async () => {
     const btn = document.getElementById('detectModels');
+    // User-initiated only. Asking to detect models implies enabling Ollama.
+    S.ollamaOn = true;
     btn.textContent = 'detecting...';
     try {
       const res  = await fetch('http://localhost:11434/api/tags');

@@ -88,6 +88,8 @@ const AIS = {
     name: 'Ollama', color: '#e8704a', url: null,
     placeholder: null, type: 'local',
     async call(key, msgs, memory, model) {
+      // Hard guard: never touch localhost unless the user turned Ollama on.
+      if (!S.ollamaOn) throw new Error('Ollama is off — turn it on in setup first.');
       const systemMsg = memory ? [{ role: 'system', content: memory }] : [];
       const res = await fetch('http://localhost:11434/api/chat', {
         method: 'POST',
@@ -292,6 +294,10 @@ function buildSetup(prefill) {
 
   document.getElementById('detectModels').addEventListener('click', async () => {
     const btn = document.getElementById('detectModels');
+    // User-initiated only. Turning Ollama on is implied by asking to detect models.
+    S.ollamaOn = true; S.modes.ollama = 'api';
+    document.querySelectorAll('[data-olmode]').forEach(b => b.classList.toggle('active', b.dataset.olmode === 'on'));
+    document.getElementById('ollamaKeyRow').style.opacity = '1';
     btn.textContent = 'detecting...';
     try {
       const res = await fetch('http://localhost:11434/api/tags');
@@ -2635,40 +2641,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const d = store.get(['view', 'modes', 'memLabel', 'ollamaOn', 'ollamaModel']);
   if (d.view && window.innerWidth > 768) S.view = d.view;
   buildSetup({ modes: d.modes, memoryLabel: d.memLabel, ollamaOn: d.ollamaOn, ollamaModel: d.ollamaModel });
-  detectOllamaOnLoad(d.ollamaOn);
 });
 
-// ── Ollama Auto-Detection ──────────────────────────────────────────────────────
-
-async function detectOllamaOnLoad(alreadyOn) {
-  // Don't nag if Ollama is already enabled
-  if (alreadyOn) return;
-  try {
-    const res = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) });
-    if (!res.ok) return;
-    // Ollama is running — show the banner
-    const banner = document.getElementById('ollamaDetectBanner');
-    if (banner) banner.style.display = 'flex';
-
-    document.getElementById('ollamaDetectConnectBtn').addEventListener('click', () => {
-      banner.style.display = 'none';
-      // Enable Ollama in the setup form
-      S.ollamaOn = true; S.modes.ollama = 'api';
-      document.querySelectorAll('[data-olmode]').forEach(b => {
-        b.classList.toggle('active', b.dataset.olmode === 'on');
-      });
-      document.getElementById('ollamaKeyRow').style.opacity = '1';
-      // Scroll to Ollama section
-      document.getElementById('ollamaSetup')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-
-    document.getElementById('ollamaDetectDismiss').addEventListener('click', () => {
-      banner.style.display = 'none';
-    });
-  } catch (_) {
-    // Ollama not running — do nothing silently
-  }
-}
+// ── Ollama ────────────────────────────────────────────────────────────────────
+// No auto-detection on load: probing http://localhost:11434 before the user has
+// asked for it triggers the browser's "access other apps on this device" prompt.
+// Ollama is only contacted after the user turns it On or clicks "detect models".
 
 // ── Analytics ─────────────────────────────────────────────────────────────────
 
@@ -3128,9 +3106,10 @@ function checkOnboarding() {
   setTimeout(() => {
     overlay.style.display = 'flex';
 
-    // Show Ollama hint if Ollama was detected
-    if (document.getElementById('ollamaDetectBanner')?.style.display !== 'none') {
-      document.getElementById('onboardingOllama').style.display = 'block';
+    // Show Ollama hint only if the user already enabled Ollama
+    if (S.ollamaOn) {
+      const hint = document.getElementById('onboardingOllama');
+      if (hint) hint.style.display = 'block';
     }
   }, 800);
 
