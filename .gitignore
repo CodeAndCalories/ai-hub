@@ -1,5 +1,12 @@
 .env
+.env.*
+!.env.example
 .DS_Store
 node_modules/
 *.zip
 Thumbs.db
+*.pem
+*.key
+*.p12
+.claude/settings.local.json
+SELL_PREP.md
