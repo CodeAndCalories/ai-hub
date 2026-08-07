@@ -73,11 +73,6 @@
       border-top: 1px solid var(--border); text-align: left; vertical-align: top;
     }
     .legal-table td:first-child { color: var(--text); white-space: nowrap; }
-    .legal-todo {
-      display: inline-block; font-family: 'Courier New', monospace;
-      font-size: 13px; color: #e0b050; background: #1a1408;
-      border: 1px solid #3a2f10; border-radius: 4px; padding: 2px 8px;
-    }
     @media (max-width: 560px) {
       .legal { padding: 40px 0 60px; }
       .legal h1 { font-size: 30px; }
@@ -191,7 +186,7 @@
     <ul>
       <li>No analytics and no telemetry of any kind.</li>
       <li>No <strong>personally identifiable information</strong> — no names, email addresses, or account identifiers. There are no accounts.</li>
-      <li>No <strong>browsing history</strong> or web history. The extension checks whether a tab is already open at chatgpt.com, claude.ai, gemini.google.com, or grok.com purely so it can focus that tab instead of opening a duplicate. That check happens locally, in the moment, and is never recorded or transmitted.</li>
+      <li>No <strong>browsing history</strong> or web history. The extension does not request Chrome's <code>tabs</code> permission, so it cannot see your open tabs or the sites you visit. It can ask Chrome only whether a tab is currently open at one of four addresses — chatgpt.com, claude.ai, gemini.google.com, or grok.com — so it can focus that tab instead of opening a duplicate. That check happens locally, in the moment, and is never recorded or transmitted.</li>
       <li>No <strong>location</strong>, health, financial, or payment information.</li>
       <li>No keystroke logging and no monitoring of other websites you visit.</li>
     </ul>
@@ -225,7 +220,7 @@
 
     <h2>13. Contact</h2>
     <p>Questions about this policy or about privacy in AI Hub can be sent to:</p>
-    <p><span class="legal-todo">CONTACT_EMAIL_STILL_TODO</span> &nbsp;<!-- TODO: replace CONTACT_EMAIL_STILL_TODO with a working, monitored email address before Chrome Web Store submission --></p>
+    <p><a href="mailto:hello@aihubdash.com">hello@aihubdash.com</a></p>
     <p>We respond to privacy inquiries as promptly as we can.</p>
   </div>
 </section>
